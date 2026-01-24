@@ -1,0 +1,92 @@
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  grid-template-areas: 
+    'keys audio'
+    'keys text'
+    'keys emotions';
+    ;
+  grid-template-rows: auto 1fr auto;
+}
+
+.highlight {
+  background-color: yellow;
+}
+
+.audio-container {
+  grid-area: audio;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+}
+
+#emotions {
+  grid-area: emotions;
+  margin-top: auto;
+  padding: 20px;
+  background-color: #ccc;
+  white-space: pre-wrap;
+  text-align: left;
+  direction: ltr;
+  font-family: monospace;
+}
+
+.text {
+  grid-area: text;
+  padding: 20px;
+  line-height: 1.5;
+  display: grid;
+  grid-template-rows: 1fr auto;
+
+  button {
+    display: none;
+  }
+
+  :focus + button {
+    display: block;
+  }
+}
+
+.keys {
+  grid-area: keys;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: lightslategray;
+  padding: 8px;
+
+  textarea {
+    width: 100%;
+    margin-bottom: 2px;
+    flex: 1;
+  }
+}
+
+.loader {
+  grid-area: 1 / 1 / -1 / -1;
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1;
+  font: 20px;
+  font-weight: bold;
+}
+
+h1 {
+  font-size: 12px;
+}

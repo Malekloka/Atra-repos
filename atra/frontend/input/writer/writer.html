@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html dir="{{dir}}" lang="{{locale}}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}}</title>
+  <link rel="stylesheet" href="/input/writer/writer.css">
+  <script
+    src="https://js.sentry-cdn.com/a8e57c805c3c65e8cfd9fab481dc604f.min.js"
+    crossorigin="anonymous"
+  ></script>
+  <script src="/assets/js/trace.js"></script>
+</head>
+<body>
+  <nav>
+    <a class="btn-back" href="/{{lang}}/entry">
+      <img src="/assets/img/back-arrow.svg" alt="back">
+    </a>
+    <div class="dropdown" id="languages-dropdown">
+      <button class="toolbar__button dropdown__button-open" title="Language">
+        A
+      </button>
+      <ul class="dropdown__options">
+        <li><button class="dropdown__option" data-value="he">עברית</button></li>
+        <li><button class="dropdown__option" data-value="en">English</button></li>
+        <li><button class="dropdown__option" data-value="ar">العربية</button></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <textarea id="text" autofocus></textarea>
+    
+    <a href="{{form_link}}" class="btn-next">
+      {{go_to_form}}
+      <img src="/assets/img/next-arrow.svg" alt="">
+    </a>
+  </main>
+
+  <script src="/input/writer/writer.js"></script>
+
+  <link rel="stylesheet" href="/assets/scripts/bg.css">
+  <script src="/assets/scripts/bg.js"></script>
+</body>
+</html>

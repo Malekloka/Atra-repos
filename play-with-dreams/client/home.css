@@ -1,0 +1,263 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700&display=swap');
+@font-face {
+  font-family: Colbo;
+  src: url("/assets/fonts/COLBO-RegularExtended.otf") format("opentype");
+}
+
+html, body {
+  padding: 0;
+  margin: 0;
+  height: 100%;
+  text-align: center;
+}
+
+body {
+  font-family: Colbo, 'Noto Sans Arabic', sans-serif;
+  background-color: #111;
+  color: #DFDFDF;
+  font-size: 20px;
+  line-height: 1.5;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+h1 {
+  margin: 0 0 1em;
+  text-shadow: #75a3ad 0 0 20px;
+}
+
+.box {
+  max-width: 90%;
+  width: 40em;
+  border-radius: 20px;
+  padding: 1em 3em 2em;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
+}
+
+.box h1 {
+  margin-bottom: .5em;
+}
+
+.box p {
+  font-size: 0.9em;
+}
+
+@media (max-width: 600px) {
+  .box {
+    padding: 1em 0 5vh;
+  }
+}
+
+.links-row {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 1em;
+}
+
+.link {
+  text-decoration: none;
+  border: 1px solid;
+  padding: 20px;
+  text-align: center;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 20px;
+  background-color: rgba(17, 17, 17, 0.6);
+  backdrop-filter: blur(10px);
+  transition: background-color 0.3s;
+}
+
+.link:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.link img {
+  width: 64px;
+}
+
+p {
+  margin: 1em 0 2em;
+}
+
+button {
+  width: 100%;
+  height: 100%;
+  font: inherit;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.bg-particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  bottom: 0;
+  left: 50%;
+  border-radius: 50%;
+  animation: particle-float-up 3s linear infinite;
+  transition: opacity 1s;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.bg-particle .particle-inner {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: #75a3ad;
+  box-shadow: 0 0 10px 2px #75a3ad;
+  border-radius: 50%;
+  animation: particle-float-around 2s ease-in-out infinite;
+}
+
+@keyframes particle-float-up {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  50% {
+    opacity: .8;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-50vh);
+  }
+}
+
+@keyframes particle-float-around {
+  0% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-20px);
+  }
+  75% {
+    transform: translateX(20px);
+  }
+  100% {
+    transform: translateX(0px);
+  }
+}
+
+.more-languages {
+  display: grid;
+  gap: 1.5em;
+  padding-top: 3em;
+  font-size: 0.8em;
+}
+
+.more-languages a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: .45em;
+}
+
+.more-languages a:hover {
+  color: white;
+}
+
+.btn-popup {
+  font-size: 0.9em;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  background: #111;
+  border-radius: 50%;
+  border: none;
+  color: #eee;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-right: auto;
+}
+
+.btn-popup:hover {
+  background-color: #222;
+}
+
+nav {
+  position: fixed;
+  z-index: 2;
+  top: 0;
+  right: 0;
+  padding: .7em;
+  display: flex;
+  gap: .5em;
+  align-items: center;
+}
+
+dialog.popup[open] {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 3;
+}
+
+.popup-close {
+  position: absolute;
+  top: -1em;
+  right: -1em;
+  font-size: 16px;
+  color: #eee;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  background-color: #111;
+  border-radius: 50%;
+  border: 1px solid #333;
+  text-align: center;
+  line-height: 34px;
+}
+
+.popup-inner {
+  position: relative;
+  background-color: #111;
+  color: #DFDFDF;
+  border-radius: 10px;
+  font-size: .9em;
+  padding: 1em;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  max-width: 90%;
+  width: 30em;
+  display: flex;
+  flex-direction: column;
+  text-align: start;
+  gap: 1em;
+}
+
+.popup-inner .text {
+  white-space: pre-line;
+}
+
+@media (min-width: 800px) {
+  dialog.popup[open] .popup-inner {
+    padding: 3em;
+    font-size: .95em;
+  }
+}
+
+
+

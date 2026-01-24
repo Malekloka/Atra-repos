@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html dir="{{dir}}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script
+    src="https://js.sentry-cdn.com/a8e57c805c3c65e8cfd9fab481dc604f.min.js"
+    crossorigin="anonymous"
+  ></script>
+  <script src="/assets/js/trace.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Public+Sans&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Kanit&display=swap');
+    @font-face {
+      font-family: Colbo;
+      src: url("/assets/fonts/COLBO-RegularExtended.otf") format("opentype");
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-size: 18px;
+    }
+
+    body {
+      font-family: Colbo, 'Kanit', 'Public Sans', sans-serif;
+      background-color: #111;
+      color: #DFDFDF;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+    .app {
+      max-width: 600px;
+      margin: auto;
+      padding: 4px;
+      padding-bottom: 100px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    a {
+      color: #DFDFDF;
+      font-size: 1.2em;
+      text-underline-offset: 4px;
+    }
+
+    h1 {
+      margin: 0 0 1em;
+      text-shadow: #75a3ad 0 0 20px;
+      text-align: center;
+    }
+
+    .back-arrow {
+      transform: rotate(180deg);
+    }
+
+    .btn-redo {
+      margin-top: 3em;
+      display: flex;
+      align-items: center;
+      gap: .4em;
+      font-size: 1em;
+      opacity: .9;
+
+      img {
+        width: 1.2em;
+        height: 1.2em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>{{end_title}}</h1>
+    <a href="http://localhost:9000/map?item={{name}}">{{watch_map}}</a>
+    <a class="btn-redo" href="/{{lang}}/entry">
+      <img src="/assets/img/next-arrow.svg" class="back-arrow" alt="">
+      {{record_another}}
+    </a>
+  </div>
+</body>
+</html>

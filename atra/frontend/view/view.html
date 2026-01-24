@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Item View</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #121212; /* Dark background */
+      color: #e0e0e0; /* Light text */
+    }
+    .item-container {
+      border: 1px solid #333;
+      padding: 20px;
+      border-radius: 5px;
+      max-width: 600px;
+      margin: auto;
+      background-color: #1e1e1e; /* Slightly lighter dark background */
+    }
+    .item-title {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+    .item-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .item-table th, .item-table td {
+      border: 1px solid #333;
+      padding: 8px;
+      text-align: left;
+    }
+    .item-table th {
+      background-color: #333; /* Darker header background */
+    }
+    .item-table td:first-child {
+      background-color: #00008B; /* Very dark blue */
+      color: #ffffff; /* White text for contrast */
+    }
+  </style>
+</head>
+<body>
+  <div class="item-container" id="item-container">
+    <div class="item-title" id="item-title">Loading...</div>
+    <table class="item-table" id="item-table">
+      <thead>
+        <tr>
+          <th>Key</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody id="item-values">
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const itemId = urlParams.get('id');
+      fetch(`/view/item/${itemId}`)
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('item-title').textContent = data.title || 'Item Details';
+          const itemValuesContainer = document.getElementById('item-values');
+          itemValuesContainer.innerHTML = '';
+          for (const [key, value] of Object.entries(data)) {
+            const row = document.createElement('tr');
+            const keyCell = document.createElement('td');
+            keyCell.textContent = key;
+            const valueCell = document.createElement('td');
+            valueCell.textContent = value;
+            row.appendChild(keyCell);
+            row.appendChild(valueCell);
+            itemValuesContainer.appendChild(row);
+          }
+        })
+        .catch(error => {
+          document.getElementById('item-title').textContent = 'Error loading item';
+          console.error('Error fetching item:', error);
+        });
+    });
+  </script>
+  <div class="bg">
+  </div>
+  
+  <link rel="stylesheet" href="/assets/scripts/bg.css">
+  <script src="/assets/scripts/bg.js"></script>
+</body>
+</html>

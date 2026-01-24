@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html dir="{{dir}}" lang="{{locale}}">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}}</title>
+  <link rel="stylesheet" href="/input/form/form.css">
+  <script
+    src="https://js.sentry-cdn.com/a8e57c805c3c65e8cfd9fab481dc604f.min.js"
+    crossorigin="anonymous"
+  ></script>
+  <script src="/assets/js/trace.js"></script>
+</head>
+
+<body>
+  <nav>
+    <a class="btn-back" href="#" onclick="history.back(); return false;">
+      <img src="/assets/img/back-arrow.svg" alt="back">
+    </a>
+    <div class="dropdown" id="languages-dropdown">
+      <button class="toolbar__button dropdown__button-open" title="Language">
+        A
+      </button>
+      <ul class="dropdown__options">
+        <li><button class="dropdown__option" data-value="he">עברית</button></li>
+        <li><button class="dropdown__option" data-value="en">English</button></li>
+        <li><button class="dropdown__option" data-value="ar">العربية</button></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="app">
+    <h1>{{form_title}}</h1>
+    <audio controls style="display: none;"></audio>
+    <h2>{{form_intro}}</h2>
+    <!-- Progress Indicator -->
+    <div class="form-progress-container">
+      <div class="form-progress-bar">
+        <div class="form-progress-fill" id="form-progress-fill"></div>
+      </div>
+      <span class="form-progress-text" id="form-progress-text">0%</span>
+    </div>
+    <form action="" id="info-form">
+      <div class="row">
+        <label for="">{{good_bad_dream_label}}</label>
+        <div class="range-labels">
+          <span>{{bad_dream}}</span>
+          <span>{{good_dream}}</span>
+        </div>
+        <input type="range" name="good_bad_dream" id="good_bad_dream" min="0" max="10" step="1">
+      </div>
+      <div class="row">
+        <label for="">{{feelings}}</label>
+        <fieldset style="display: grid; grid-template-columns: 1fr 1fr;">
+            <label style="font-weight: normal;"><input type="checkbox" name="fear" value="yes"><span>{{fear}}</span></label>
+            <label><input type="checkbox" name="happiness" value="yes"><span>{{happiness}}</span></label>
+            <label><input type="checkbox" name="sadness" value="yes"><span>{{sadness}}</span></label>
+            <label><input type="checkbox" name="anger" value="yes"><span>{{anger}}</span></label>
+            <label><input type="checkbox" name="confusion" value="yes"><span>{{confusion}}</span></label>
+            <label><input type="checkbox" name="hope" value="yes"><span>{{hope}}</span></label>
+            <label><input type="checkbox" name="peacefulness" value="yes"><span>{{peacefulness}}</span></label>
+        </fieldset>
+      </div>
+      <div class="row">
+        <label for="age">{{age}}</label>
+        <input type="number" name="age" id="age">
+      </div>
+      <div class="row">
+        <label for="city">{{city_label}}</label>
+        <select class="dropdown-select" name="city" id="city">
+          <option value="">{{city_not_specified}}</option>
+          <option value="arad">{{city_arad}}</option>
+          <option value="telaviv">{{city_telaviv}}</option>
+        </select>
+      </div>
+      <div class="row">
+        <label for="whenOffset">{{when}}</label>
+        <select class="dropdown-select" name="whenOffset" id="whenOffset">
+          <option value="-1">{{last_night}}</option>
+          <option value="-7">{{past_week}}</option>
+          <option value="-30">{{past_month}}</option>
+          <option value="-180">{{past_six_months}}</option>
+          <option value="-365">{{past_year}}</option>
+          <option value="-730">{{two_years_ago}}</option>
+          <option value="-800">{{long_time_ago}}</option>
+        </select>
+      </div>
+      <div class="row">
+        <fieldset>
+          <label>{{before_october_7}}</label>
+          <label>
+            <input type="radio" name="beforeOctober7" value="yes">
+            <span>{{before_october_7_yes}}</span>
+          </label>
+          <label>
+            <input type="radio" name="beforeOctober7" value="no">
+            <span>{{before_october_7_no}}</span>
+          </label>
+        </fieldset>
+      </div>
+      <div class="row">
+        <label for="association">{{association}}</label>
+        <textarea name="association" id="association" rows="5"></textarea>
+      </div>
+      <div class="row">
+        <fieldset>
+          <strong>{{anonymize}}</strong><br />
+          <small>{{anonymize_small}}</small>
+          <label>
+            <input type="radio" name="anonymize" value="yes">
+            <span>{{anonymize_yes}}</span>
+          </label>
+          <label>
+            <input type="radio" name="anonymize" value="no">
+            <span>{{anonymize_no}}</span>
+          </label>
+        </fieldset>
+      </div>
+      <div class="row" data-show-when="anonymize=no">
+        <label for="fullname">{{fullname}}</label>
+        <input type="text" name="fullname" id="fullname">
+      </div>
+      <div class="row" data-show-when="anonymize=no">
+        <label for="email">{{email}}</label>
+        <input type="email" name="email" id="email">
+      </div>
+
+      
+      <div class="legal">{{legal}}</div>
+      <fieldset>
+        <label class="chk_confirm">
+          <input type="checkbox" name="legal" value="yes">
+          <span>{{legal_confirm}}</span>
+        </label>
+      </fieldset>
+  </form>
+  
+  <div class="publish-btn-container">
+    <button class="btn-publish">{{done}}</button>
+  </div>
+  <div class="page-loader">
+      <div class="spinner"></div>
+  </div>
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+  <script src="/input/form/form.js"></script>
+  <link rel="stylesheet" href="/assets/scripts/bg.css">
+  <script src="/assets/scripts/bg.js"></script>
+</body>
+
+</html>

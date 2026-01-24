@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html dir="{{dir}}" lang="{{locale}}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}}</title>
+  <link rel="stylesheet" href="/input/recorder/recorder.css">
+  <script
+    src="https://js.sentry-cdn.com/a8e57c805c3c65e8cfd9fab481dc604f.min.js"
+    crossorigin="anonymous"
+  ></script>
+  <script src="/assets/js/trace.js"></script>
+</head>
+<body>
+  <nav>
+    <a class="btn-back" href="/{{lang}}/entry">
+      <img src="/assets/img/back-arrow.svg" alt="back">
+    </a>
+    <div class="dropdown" id="languages-dropdown">
+      <button class="toolbar__button dropdown__button-open" title="Language">
+        A
+      </button>
+      <ul class="dropdown__options">
+        <li><button class="dropdown__option" data-value="he">עברית</button></li>
+        <li><button class="dropdown__option" data-value="en">English</button></li>
+        <li><button class="dropdown__option" data-value="ar">العربية</button></li>
+      </ul>
+    </div>
+  </nav>
+
+  <audio id="audio" style="display: none;"></audio>
+
+  <div class="app" data-screen-index="1">
+    <section id="screen-start-record" data-screen-index="1">
+      <div class="above-button"></div>
+      <div class="access-warning">{{access_warning}}</div>
+      <button class="main-button primary" id="btn-start-record" onclick="handleStartRecording()">
+        <div class="icon">
+          <img src="/assets/img/mic.svg" alt="">
+        </div>
+      </button>
+      <div class="exp">
+        {{click_to_record}}<br/>
+        {{or}}
+        <label for="input-upload-file" id="input-upload-file-label" class="link-btn-with-icon">
+          <input type="file" name="file" id="input-upload-file" hidden />
+          <img src="/assets/img/upload.svg" alt="">
+          {{upload_file}}
+        </label>
+        <!-- {{or}}
+        <a class="link-btn-with-icon" href="{{whatsapp_link}}">
+          <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M18.9564 15.5931C18.6329 15.4312 17.0426 14.6487 16.7461 14.5407C16.4496 14.4327 16.234 14.3788 16.0183 14.7026C15.8027 15.0263 15.1828 15.755 14.9941 15.9709C14.8054 16.1867 14.6167 16.2139 14.2933 16.0518C13.9698 15.89 12.9275 15.5484 11.692 14.4463C10.7305 13.5886 10.0812 12.5294 9.89259 12.2055C9.70389 11.8817 9.87243 11.7067 10.0344 11.5454C10.18 11.4005 10.3579 11.1676 10.5196 10.9787C10.6814 10.7899 10.7353 10.6548 10.8431 10.4391C10.9509 10.2231 10.897 10.0343 10.8161 9.87239C10.7353 9.7105 10.0884 8.11831 9.81881 7.47054C9.55622 6.83989 9.28957 6.9253 9.09101 6.9153C8.90256 6.90596 8.68664 6.90398 8.47107 6.90398C8.25546 6.90398 7.90497 6.98492 7.60845 7.30865C7.31199 7.63248 6.47639 8.41512 6.47639 10.0072C6.47639 11.5994 7.63542 13.1374 7.79716 13.3533C7.95889 13.5693 10.078 16.8364 13.323 18.2375C14.0946 18.5709 14.6972 18.7699 15.1669 18.9189C15.9418 19.1652 16.647 19.1304 17.2043 19.0471C17.8258 18.9543 19.1181 18.2647 19.3877 17.5091C19.6572 16.7534 19.6572 16.1058 19.5763 15.9709C19.4955 15.8359 19.2799 15.755 18.9564 15.5931ZM13.0544 23.6517H13.05C11.1192 23.6509 9.22553 23.1322 7.57352 22.1519L7.18057 21.9187L3.10822 22.987L4.19519 19.0164L3.93941 18.6093C2.86229 16.8962 2.29338 14.9161 2.29425 12.883C2.29663 6.95049 7.12354 2.12399 13.0587 2.12399C15.9326 2.12495 18.6342 3.24565 20.6657 5.27948C22.6972 7.31327 23.8153 10.0167 23.8142 12.8917C23.8118 18.8247 18.9849 23.6517 13.0544 23.6517ZM22.2119 3.73406C19.7677 1.28711 16.5174 -0.0610781 13.0542 -0.0625C5.91876 -0.0625 0.111363 5.74454 0.108469 12.8822C0.107555 15.1639 0.703625 17.3909 1.83655 19.3542L0 26.0625L6.86263 24.2623C8.75352 25.2936 10.8824 25.8373 13.0491 25.838H13.0544C20.1892 25.838 25.9971 20.0303 26 12.8926C26.0013 9.43349 24.656 6.181 22.2119 3.73406Z" fill="#fff"/>
+          </svg>
+          {{send_whatsapp}}
+        </a> -->
+      </div>
+    </section>
+    <section id="screen-recording" data-screen-index="2">
+      <div class="time above-button">00:00:00</div>
+      <button class="main-button" id="btn-end-record" onclick="handleEndRecording()">
+        <div id="circle1" class="circle"></div>
+        <div id="circle2" class="circle"></div>
+        <div class="icon">
+          <img src="/assets/img/stop.svg" alt="">
+        </div>
+      </button>
+      <div class="exp">
+        <div class="label-recording">
+          <div class="red-circle"></div>
+          {{recording}}
+          <div class="dancing-bars">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section id="screen-saving" data-screen-index="3">
+      <div class="above-button"></div>
+      <button class="main-button loader" disabled>
+        <div class="icon">
+          <img src="/assets/img/save.svg" alt="">
+        </div>
+      </button>
+      <div class="exp">
+        {{saving}}
+      </div>
+    </section>
+    <section id="screen-play-recording" data-screen-index="4">
+      <div class="above-button time">00:00:00</div>
+      <button class="main-button btn-play-stop" id="btn-play-stop" onclick="handlePlayRecording()">
+        <div class="icon">
+          <img src="/assets/img/play.svg" alt="">
+          <img src="/assets/img/stop.svg" alt="">
+        </div>
+      </button>
+      <div class="my-recording">
+        <div class="dancing-bars static">
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+        </div>
+        {{my_recording}}
+      </div>
+      <button class="link-btn-with-icon btn-smaller" onclick="handleRecordAgain()">
+        {{record_again}}
+      </button>
+      <p class="go_to_form_instruction">{{go_to_form_instruction}}</p>
+      <a href="{{form_link}}" class="btn-next">
+        {{go_to_form}}
+        <img src="/assets/img/next-arrow.svg" alt="">
+      </a>
+    </section>
+  </div>
+  
+
+  <script src="/input/recorder/js/record.js"></script>
+  <script src="/input/recorder/js/recorder-page.js"></script>  
+  
+  <link rel="stylesheet" href="/assets/scripts/bg.css">
+  <script src="/assets/scripts/bg.js"></script>
+</body>
+</html>

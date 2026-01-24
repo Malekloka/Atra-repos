@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>מפת החלומות</title>
+  <base href="/study/">
+  <link rel="stylesheet" href="./study.css">
+  <script src="lib/matter.js"></script>
+  <script src="lib/hammer.min.js"></script>
+  <script src = "/socket.io/socket.io.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Alef&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="toolbar">
+    <button class="toolbar__button" id="btn-full-screen" title="Full screen" style="display: none;">
+      []
+    </button>
+    <button class="toolbar__button" id="btn-export-map" title="Export/Share Map">
+      📷
+    </button>
+    <button class="toolbar__button" id="btn-open-instructions" title="Instructions">
+      ?
+    </button>
+    <div class="dropdown" id="languages-dropdown">
+      <button class="toolbar__button dropdown__button-open" title="Language">
+        A
+      </button>
+      <ul class="dropdown__options">
+        <li><button class="dropdown__option" data-value="he">עברית</button></li>
+        <li><button class="dropdown__option" data-value="en">English</button></li>
+        <li><button class="dropdown__option" data-value="ar">العربية</button></li>
+      </ul>
+    </div>
+
+    <div class="dropdown" id="view-options-dropdown">
+      <button class="toolbar__button dropdown__button-open" title="Settings">
+        <img class="icon" src="/assets/icons/cog.svg">
+      </button>
+      <ul class="dropdown__options">
+        <li>
+          <label class="checkbox" for="chk-color-good-bad-dream">
+            <input type="checkbox" id="chk-color-good-bad-dream">
+            <b></b>
+            <span class="text">Color Feelings</span>
+          </label>
+        </li>
+        <li>
+          <label class="checkbox" for="chk-show-emotions-felt">
+            <input type="checkbox" id="chk-show-emotions-felt">
+            <b></b>
+            <span class="text">Emotions Felt</span>
+          </label>          
+        </li>
+      </ul>
+    </div>
+
+    <div class="dropdown dropdown-white" id="maps-dropdown">
+      <button class="dropdown__button-open dropdown__selected" >
+        חיים אישיים
+      </button>
+      <ul class="dropdown__options">
+      </ul>
+    </div>
+
+    <div class="dropdown dropdown-white" id="city-filter-dropdown">
+      <button class="dropdown__button-open dropdown__selected">
+        כל החלומות
+      </button>
+      <ul class="dropdown__options">
+      </ul>
+    </div>
+
+    <!-- Search Bar in Toolbar (left side) -->
+    <div class="search-container" id="search-container">
+      <input type="text" class="search-input" id="search-input" placeholder="Search dreams...">
+      <button class="search-clear" id="search-clear" style="display: none;">×</button>
+    </div>
+
+    <!-- Good/Bad dream quick filters -->
+    <div class="good-bad-filters" id="good-bad-filters">
+      <button class="toolbar__button good-filter-btn" id="btn-show-good-dreams" title="Show only good dreams">
+        🙂+
+      </button>
+      <button class="toolbar__button bad-filter-btn" id="btn-show-bad-dreams" title="Show only bad dreams">
+        😟+
+      </button>
+    </div>
+    <a class="toolbar__button btn-back" title="Back to Home" id="btn-back-home">
+      <img class="icon" src="/assets/icons/back-arrow.svg">
+    </a>
+  </div>
+  
+  
+  <div class="stage">
+    <canvas class="stage__constraints"></canvas>
+    <div class="stage__items"></div>
+    <div class="cluster-labels">
+      <div class="cluster-label cluster-label--arad" id="cluster-label-arad" style="display: none;">
+        <span class="cluster-label__text" data-lang="en">Arad</span>
+        <span class="cluster-label__text" data-lang="he">ערד</span>
+        <span class="cluster-label__text" data-lang="ar">عراد</span>
+      </div>
+      <div class="cluster-label cluster-label--telaviv" id="cluster-label-telaviv" style="display: none;">
+        <span class="cluster-label__text" data-lang="en">Tel-Aviv</span>
+        <span class="cluster-label__text" data-lang="he">תל אביב</span>
+        <span class="cluster-label__text" data-lang="ar">تل أبيב</span>
+      </div>
+    </div>
+  </div>
+  <div class="details-box-container hidden">
+    <div class="details-box hidden">
+      ....
+    </div>
+  </div>
+  <div class="hub-modal hidden">
+  </div>
+  <div class="backdrop"></div>
+  <canvas id="canvas" style="display: none;"></canvas>
+  <section class="instructions">
+    <div class="instructions-box">
+      <div class="instructions-box__close">
+        X
+      </div>
+      <h1>מפת החלומות</h1>
+      <input type="password" class="admin-password hidden">
+      <p>
+        כל נקודה לבנה היא חלום שנאסף. המעגלים הגדולים הם נושאים שמקשרים בין החלומות. את הקשר בין חלום לבין נושא אפשר לראות לפי אורך הקו המחבר ביניהם; ככל שקו יותר קצר, הקשר יותר חזק.
+      </p>
+      <ul>
+        <li>מומלץ לצפייה במסך מחשב</li>
+        <li>לחצו מקש ימני בעכבר כדי להוסיף נושא</li>
+        <li>ניתן ללחוץ ולגרור נושא עם העכבר</li>
+        <li>על כל נושא יש כפתור "פח" שמאפשר למחוק אותו</li>
+        <li>רחפו עם העכבר מעל חלום כדי לקרוא אותו</li>
+      </ul>
+      <h2>קיצורי מקלדת</h2>
+      <ul>
+        <li><strong>Space</strong> - מעבר למסך מלא</li>
+        <li><strong>+/-</strong> - התקרבות/התרחקות</li>
+        <li><strong>חצים</strong> - ניווט במפה</li>
+        <li><strong>F</strong> - התאמה למסך</li>
+        <li><strong>Esc</strong> - סגירת חלונות</li>
+      </ul>
+    </div>
+  </section>
+  <div class="bars">
+    <ul class="emotions-colors-bar"></ul>
+    <ul class="good-bad-dream-bar"></ul>
+  </div>
+  
+  <!-- Statistics Dashboard -->
+  <div class="stats-dashboard" id="stats-dashboard">
+    <div class="stats-header">
+      <h3>📊 Statistics</h3>
+      <button class="stats-toggle" id="stats-toggle">−</button>
+    </div>
+    <div class="stats-content" id="stats-content">
+      <div class="stat-item">
+        <span class="stat-label">Total Dreams:</span>
+        <span class="stat-value" id="stat-total">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Good Dreams:</span>
+        <span class="stat-value" id="stat-good">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Bad Dreams:</span>
+        <span class="stat-value" id="stat-bad">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Topics:</span>
+        <span class="stat-value" id="stat-topics">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Connections:</span>
+        <span class="stat-value" id="stat-connections">0</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="./study.js" type="module"></script>
+</body>
+</html>
+

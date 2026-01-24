@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Archive</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      margin-top: 6px;
+      color: #fff;
+    }
+    body {
+      font-family: Heebo, sans-serif;
+      background-color: #FFFBE8;
+      color: #3f3f3f;
+      font-size: 16px;
+    }
+    
+    * {
+      box-sizing: border-box;
+    }
+    
+    .search {
+      width: 100%;
+      padding: 4px;
+      position: sticky;
+      top: 0;
+      background-color: rgb(8, 1, 45);
+      padding: 10px 10px 20px;
+      z-index: 1;
+    }
+    .main-filter {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .search .input {
+      flex: 1;
+    }
+    .search .input input, .search .input select {
+      width: 100%;
+    }
+    input, textarea, select {
+      font: inherit;
+      color: inherit;
+    }
+    .more-filters {
+      font-size: 14px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .filter {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      color: #fff;
+    }
+    .filter input, .filter select {
+      color: #000;
+    }
+    .results {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    }
+    .results .item {
+      position: relative;
+      padding: 10px;
+      background-color: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 2px 1px 3px 0px rgba(0, 0, 0, 0.2);
+      margin: 4px;
+    }
+    .item audio {
+      width: 100%;
+    }
+    .results::after {
+      opacity: .5;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .results:empty::after {
+      content: '(No results, change filters and search again)';
+    }
+    .results.loading:empty::after {
+      content: 'Searching...';
+    }
+    .actions {
+      margin-top: auto;
+      display: flex;
+      gap: 12px;
+    }
+    .item-tag {
+      position: absolute;
+      top: 10px;
+      left: 0;
+      background-color: bisque;
+      padding: 2px;
+    }
+    .item-tag::before {
+      position: absolute;
+      top: 4px;
+      content: '';
+      width: 22px;
+      height: 22px;
+      transform: rotate(45deg);
+      background: inherit;
+      right: -10px;
+    }
+    .item-tag input {
+      background: none;
+      border: none;
+      outline: none;
+      position: relative;
+      width: 240px;
+    }
+    .item-tag input:placeholder-shown:not(:focus){
+      width: 20px;
+    }
+    .login {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      inset: 0;
+      background-color: #000;
+      z-index: 3;
+    }
+
+    .hidden {
+      display: none;
+    }
+    .count {
+      color: #fff;
+      text-align: center;
+      width: 100px;
+      margin: 10px auto 0;
+      padding: 4px;
+      background-color: #3f3f3f;
+    }
+
+    input {
+      padding: 4px;
+      border: 1px solid #3f3f3f;
+    }
+
+    button {
+      padding: 4px 18px;
+      border: 1px solid #3f3f3f;
+      background-color: #3f3f3f;
+      color: #fff;
+      cursor: pointer;
+    }
+    </style>
+</head>
+<body>
+  <form class="login">
+    <input type="password" name="pass" dir="ltr" /> <br/>
+    <button role="submit">כניסה</button>
+    <div class="bg">
+    </div>
+  </form>
+    <form class="search hidden">
+      <h1>
+        ארכיון
+      </h1>
+      <div class="main-filter">
+        <div class="input">
+          <input type="search" name="searchText" id="searchText">
+        </div>
+    
+        <button id="btnSearch">חיפוש</button>
+      </div>
+      <div class="more-filters">
+        <div class="filter">
+          <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 12H7H17H20C20.6 12 21 11.6 21 11C21 10.4 20.6 10 20 10H17.8L16.3 4.2C16 2.9 14.9 2 13.6 2C13.4 2 13.2 2.1 13.1 2.2L12.8 2.4C12.4 2.7 11.9 2.7 11.5 2.4L11 2.2C10.8 2.1 10.6 2 10.4 2C9.1 2 8 2.9 7.7 4.2L6.2 10H4C3.4 10 3 10.4 3 11C3 11.6 3.4 12 4 12ZM9.6 4.6C9.7 4.3 9.9 4.1 10.2 4C11.3 4.7 12.6 4.7 13.7 4C14 4.1 14.2 4.3 14.3 4.6L15 7H9L9.6 4.6ZM8.5 9H15.4L15.7 10H8.3L8.5 9Z" fill="white"/>
+            <path d="M17 13C15.1 13 13.6 14.3 13.1 16H10.8C10.4 14.3 8.80002 13 6.90002 13C4.70002 13 2.90002 14.8 2.90002 17C2.90002 19.2 4.70002 21 6.90002 21C8.80002 21 10.3 19.7 10.8 18H13.1C13.5 19.7 15.1 21 17 21C19.2 21 21 19.2 21 17C21 14.8 19.2 13 17 13ZM7.00002 19C5.90002 19 5.00002 18.1 5.00002 17C5.00002 15.9 5.90002 15 7.00002 15C8.10002 15 9.00002 15.9 9.00002 17C9.00002 18.1 8.10002 19 7.00002 19ZM17 19C15.9 19 15 18.1 15 17C15 15.9 15.9 15 17 15C18.1 15 19 15.9 19 17C19 18.1 18.1 19 17 19Z" fill="white"/>
+          </svg>
+    
+          <select name="anonymize" id="anonymize">
+            <option value="">בחר אנונימיות</option>
+            <option value="yes">אנונימי</option>
+            <option value="no">לא אנונימי</option>
+          </select>
+        </div>
+        
+
+        <div class="filter">
+          מתאריך
+          <input type="date" name="startDate" />
+          עד
+          <input type="date" name="endDate" />
+        </div>
+      </div>
+      <div class="count">...</div>
+    </form>
+    <div class="results hidden"></div>
+      
+  
+  <link rel="stylesheet" href="/assets/scripts/bg.css">
+  <script src="/assets/scripts/bg.js"></script>
+  <script src="./archive.js" type="text/javascript"></script>
+</body>
+</html>

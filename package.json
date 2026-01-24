@@ -1,0 +1,13 @@
+{
+  "name": "atra-repos-main",
+  "version": "1.0.0",
+  "description": "Main project with atra and play-with-dreams servers",
+  "main": "start-servers.js",
+  "scripts": {
+    "start": "node start-servers.js",
+    "install-all": "cd atra && npm install && cd ../play-with-dreams && npm install"
+  },
+  "author": "",
+  "license": "ISC"
+}
+

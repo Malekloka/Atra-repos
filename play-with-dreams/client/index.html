@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script src="https://cdn.jsdelivr.net/npm/osc-js@2.4.1/lib/osc.min.js"></script>
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <div class="keys">
+    <h1>Keys</h1>
+    <textarea id="keys" placeholder="keys.."></textarea>
+    <button id="btn-recalculate">Recalculate</button>
+  </div>
+  <div class="audio-container">
+    <button id="btn-replay">Replay</button>
+    <audio id="audio" controls></audio>
+  </div>
+  <div class="text" dir="rtl">
+    <div id="text" contenteditable="true"></div>
+    <button id="btn-save-text">Save</button>
+  </div>
+  <div id="emotions"></div>
+  <div class="loader" id="loader">
+    Loading...
+  </div>
+  <script src="index.js"></script>
+</body>
+</html>

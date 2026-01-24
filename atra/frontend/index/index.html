@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="{{lang}}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}}</title>
+  <link rel="stylesheet" href="/index/index.css">
+</head>
+<body>
+  <nav>
+    <button class="btn-popup" title="Language">
+      ?
+    </button>
+    <div class="dropdown" id="languages-dropdown">
+      <button class="toolbar__button dropdown__button-open" title="Language">
+        A
+      </button>
+      <ul class="dropdown__options">
+        <li><button class="dropdown__option" data-value="he">עברית</button></li>
+        <li><button class="dropdown__option" data-value="en">English</button></li>
+        <li><button class="dropdown__option" data-value="ar">العربية</button></li>
+      </ul>
+    </div>
+    <a class="btn-back" href="https://neve-schechter.org.il/">
+      <img src="/assets/img/back-arrow.svg" alt="back">
+    </a>
+  </nav>
+
+  <dialog id="popup" class="popup">
+    <div class="popup-inner" dir="{{dir}}">
+      <button class="popup-close">X</button>
+      <div class="text">{{more_info}}</div>
+    </div>
+  </dialog>
+  
+  <div class="bg">
+  </div>
+  <div class="box">
+    <h1>{{title}}</h1>
+    <p>{{desc}}</p>
+    <div class="links-row">
+      <a class="link" href="/{{lang}}/entry">
+        {{add_dream}}
+      </a>
+      <a class="link" href="http://localhost:9000/map?lang={{lang}}">
+        {{explore_dreams}}
+      </a>
+    </div>
+    <div class="more-languages">
+      <a href="/he" class="for_he">{{for_he}}</a>
+      <a href="/en" class="for_en">{{for_en}}</a>
+      <a href="/ar" class="for_ar">{{for_ar}}</a>
+    </div>
+  </div>
+  <link rel="stylesheet" href="/assets/scripts/bg.css">
+  <script src="/assets/scripts/bg.js"></script>
+  <script>
+    // open popup
+    const btnPopup = document.querySelector('.btn-popup');
+    const popup = document.querySelector('#popup');
+    btnPopup.addEventListener('click', () => {
+      popup.showModal();
+    });
+    popup.addEventListener('click', (e) => {
+      if (e.target === popup) {
+        popup.close();
+      }
+    });
+    document.querySelector('.popup-close').addEventListener('click', () => {
+      popup.close();
+    });
+  </script>
+</body>
+</html>

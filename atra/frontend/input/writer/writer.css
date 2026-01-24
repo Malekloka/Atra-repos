@@ -1,0 +1,74 @@
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Kanit&display=swap');
+@font-face {
+  font-family: Colbo;
+  src: url("/assets/fonts/COLBO-RegularExtended.otf") format("opentype");
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  font-family: Colbo, 'Kanit', 'Public Sans', sans-serif;
+  text-align: center;
+  line-height: 150%;
+  font-size: 18px;
+}
+
+body {
+  display: flex;
+  background-color: #111;
+  color: #DFDFDF;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+textarea {
+  width: 100%;
+  height: 100%;
+  padding: 1em;
+  font-size: 1em;
+  font-family: inherit;
+  border: 0;
+  background-color: transparent;
+  color: inherit;
+  resize: none;
+  outline: 1px solid currentColor;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  width: 50em;
+  height: 40em;
+  margin: auto;
+  padding: 2em;
+  max-width: 90%;
+  max-height: 90%;
+  gap: 1em;
+}
+
+.btn-next {
+  color: inherit;
+  display: flex;
+  align-items: center;
+  border: 1px solid currentColor;
+  gap: 2em;
+  padding: .7em 2em;
+  border-radius: 2em;
+  text-decoration: none;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.btn-next:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+
+html[dir="ltr"] .btn-next img {
+  transform: rotate(180deg);
+}

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>הוספת חלום</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      direction: rtl;
+    }
+
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 30px;
+      text-align: center;
+      font-size: 2em;
+    }
+
+    .form-group {
+      margin-bottom: 25px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      color: #555;
+      font-weight: bold;
+      font-size: 1.1em;
+    }
+
+    select.city-select {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 16px;
+      font-family: inherit;
+      background: white;
+      cursor: pointer;
+      transition: border-color 0.3s;
+      direction: rtl;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: left 15px center;
+      padding-left: 40px;
+    }
+
+    select.city-select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 200px;
+      padding: 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 16px;
+      font-family: inherit;
+      resize: vertical;
+      transition: border-color 0.3s;
+      direction: rtl;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+    }
+
+    button {
+      padding: 15px 40px;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1em;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+      flex: 1;
+      max-width: 200px;
+    }
+
+    .btn-submit {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-submit:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-back {
+      background: #f0f0f0;
+      color: #333;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+    }
+
+    .btn-back:hover {
+      background: #e0e0e0;
+      transform: translateY(-2px);
+    }
+
+    .message {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+      display: none;
+    }
+
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .loader {
+      display: none;
+      text-align: center;
+      margin-top: 20px;
+      color: #667eea;
+      font-weight: bold;
+    }
+
+    .loader.show {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>הוספת חלום חדש</h1>
+    <form id="dream-form">
+      <div class="form-group">
+        <label for="dream-text">תאר את החלום שלך:</label>
+        <textarea id="dream-text" name="dream-text" placeholder="כתוב כאן את החלום שלך..." required></textarea>
+      </div>
+      <div class="form-group">
+        <label for="city">עיר (אופציונלי):</label>
+        <select class="city-select" name="city" id="city">
+          <option value="">לא צוין</option>
+          <option value="arad">ערד</option>
+          <option value="telaviv">תל אביב</option>
+        </select>
+      </div>
+      <div class="button-group">
+        <button type="submit" class="btn-submit" id="submit-btn">הוסף חלום</button>
+        <a href="/home" class="btn-back">חזרה לדף הבית</a>
+      </div>
+    </form>
+    <div class="loader" id="loader">מוסיף חלום ומקטלג...</div>
+    <div class="message" id="message"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById('dream-form');
+    const textarea = document.getElementById('dream-text');
+    const citySelect = document.getElementById('city');
+    const submitBtn = document.getElementById('submit-btn');
+    const loader = document.getElementById('loader');
+    const message = document.getElementById('message');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const text = textarea.value.trim();
+      
+      if (!text) {
+        showMessage('אנא הזן תיאור של החלום', 'error');
+        return;
+      }
+
+      // Disable form and show loader
+      submitBtn.disabled = true;
+      loader.classList.add('show');
+      message.style.display = 'none';
+
+      try {
+        const city = citySelect.value.trim();
+        const requestBody = { text };
+        if (city) {
+          requestBody.city = city;
+        }
+        
+        const response = await fetch('/study/api/add-dream', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showMessage(`החלום נוסף בהצלחה! הנושא שזוהה: ${data.item.mainTheme}`, 'success');
+          textarea.value = '';
+          
+          // Redirect to map after 2 seconds
+          setTimeout(() => {
+            window.location.href = '/map';
+          }, 2000);
+        } else {
+          showMessage(data.error || 'שגיאה בהוספת החלום', 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showMessage('שגיאה בהתחברות לשרת', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        loader.classList.remove('show');
+      }
+    });
+
+    function showMessage(text, type) {
+      message.textContent = text;
+      message.className = `message ${type}`;
+      message.style.display = 'block';
+    }
+  </script>
+</body>
+</html>
+
