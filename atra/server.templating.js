@@ -6,13 +6,10 @@ function useTemplates(app) {
       if (err) return callback(err)
       // this is an extremely simple template engine
       let rendered = content.toString()
-      for(key in options){
+      for (key in options) {
         const keySyntax = `{{${key}}}`;
-        if(rendered.indexOf(keySyntax) != -1){
-          rendered = rendered.replace(keySyntax, options[key]);
-          rendered = rendered.replace(keySyntax, options[key]);
-          rendered = rendered.replace(keySyntax, options[key]);
-          rendered = rendered.replace(keySyntax, options[key]);
+        if (rendered.indexOf(keySyntax) !== -1) {
+          rendered = rendered.split(keySyntax).join(options[key]);
         }
       }
       

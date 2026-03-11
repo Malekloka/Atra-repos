@@ -5,7 +5,13 @@
   "main": "start-servers.js",
   "scripts": {
     "start": "node start-servers.js",
-    "install-all": "cd atra && npm install && cd ../play-with-dreams && npm install"
+    "install-all": "cd atra && npm install && cd ../play-with-dreams && npm install",
+    "scaffold:job": "node scripts/scaffold.js job",
+    "scaffold:route": "node scripts/scaffold.js route",
+    "scaffold:service": "node scripts/scaffold.js service",
+    "scaffold:ui": "node scripts/scaffold.js ui",
+    "scaffold:collection": "node scripts/scaffold.js collection",
+    "scaffold:atra-route": "node scripts/scaffold.js atra-route"
   },
   "author": "",
   "license": "ISC"

@@ -17,6 +17,47 @@ const port = process.env.PORT || 9000;
 
 const app = express();
 
+const TENANT_COOKIE = 'tenantId';
+
+const getCookieValue = (cookieHeader, name) => {
+  if (!cookieHeader) return null;
+  const cookies = cookieHeader.split(';').map((part) => part.trim());
+  for (const cookie of cookies) {
+    const [key, ...rest] = cookie.split('=');
+    if (key === name) {
+      return decodeURIComponent(rest.join('='));
+    }
+  }
+  return null;
+};
+
+const setTenantCookie = (res, tenantId) => {
+  const cookieValue = `${TENANT_COOKIE}=${encodeURIComponent(tenantId)}; Path=/`;
+  const existing = res.getHeader('Set-Cookie');
+  if (!existing) {
+    res.setHeader('Set-Cookie', cookieValue);
+    return;
+  }
+  if (Array.isArray(existing)) {
+    res.setHeader('Set-Cookie', [...existing, cookieValue]);
+    return;
+  }
+  res.setHeader('Set-Cookie', [existing, cookieValue]);
+};
+
+app.use((req, res, next) => {
+  const match = req.url.match(/^\/t\/([^/]+)(\/|$)/);
+  if (match) {
+    const tenantId = decodeURIComponent(match[1]);
+    req.tenantId = tenantId;
+    req.url = req.url.replace(/^\/t\/[^/]+/, '') || '/';
+    setTenantCookie(res, tenantId);
+  } else {
+    req.tenantId = getCookieValue(req.headers.cookie, TENANT_COOKIE) || 'demo';
+  }
+  next();
+});
+
 // Enable CORS for all routes
 app.use(cors());
 
@@ -28,20 +69,18 @@ const io = new Server(server, {
   }
 });
 
-const activeSockets = [];
+const TENANT_ROOM_PREFIX = 'tenant:';
+
+const getTenantFromCookie = (cookieHeader) =>
+  getCookieValue(cookieHeader, TENANT_COOKIE) || 'default';
 
 io.on('connection', (socket) => {
-  activeSockets.push(socket);
+  const tenantId = getTenantFromCookie(socket.request.headers.cookie);
+  const roomName = `${TENANT_ROOM_PREFIX}${tenantId}`;
+  socket.join(roomName);
 
   socket.on('update', (message) => {
-    io.emit('update', message);
-  });
-
-  socket.on('disconnect', () => {
-    const index = activeSockets.indexOf(socket);
-    if (index !== -1) {
-      activeSockets.splice(index, 1);
-    }
+    io.to(roomName).emit('update', message);
   });
 });
 
@@ -61,6 +100,10 @@ app.get('/map', (req, res) => {
 
 app.get('/add-dream', (req, res) => {
   res.sendFile('client/add-dream.html', { root: process.cwd() });
+});
+
+app.get('/my-page', (req, res) => {
+  res.sendFile('client/my-page.html', { root: process.cwd() });
 });
 
 app.use(express.json());
@@ -87,7 +130,7 @@ app.use('/audio', express.static('audio'));
 // Serve static files from the 'audio' folder
 
 app.post('/:id/load/', async (req, res) => {
-  const item = await datastore.items.get(req.params.id);
+  const item = await datastore.items.get(req.params.id, { tenantId: req.tenantId });
   res.json(item);
   // const audioFolder = path.resolve(`./audio/${req.params.id}`);
   // const filePath = path.join(audioFolder, 'speech.json');
@@ -99,6 +142,9 @@ app.post('/:id/load/', async (req, res) => {
 
 app.post('/:id/save', async (req, res) => {
   const item = req.body;
+  if (!item.tenantId) {
+    item.tenantId = req.tenantId;
+  }
   datastore.items.saveItem(item);
   res.json(item);
 });
@@ -106,7 +152,7 @@ app.post('/:id/save', async (req, res) => {
 app.post('/:id/recalculate', async (req, res) => {
   console.log(req.body);
   const { keys } = req.body;
-  const item = await datastore.items.get(req.params.id);
+  const item = await datastore.items.get(req.params.id, { tenantId: req.tenantId });
 
   const analyzer = new Tagger(openai, keys);
   item.segments = [];
@@ -135,13 +181,14 @@ app.post('/:id/create', async (req, res) => {
   }
   data.text = text;
 
-  const item = await datastore.items.update(req.params.id, data);
+  data.tenantId = data.tenantId ?? req.tenantId;
+  const item = await datastore.items.update(req.params.id, data, { tenantId: req.tenantId });
   res.json(item);
 });
 
 app.post('/process', cors(), async (req, res) => {
   console.log('🔄 Processing request received - starting jobs...');
-  runJobs().catch(err => {
+  runJobs(req.tenantId).catch(err => {
     console.error('❌ Error running jobs:', err);
   });
   res.json({status: 'ok', message: 'Processing started. Check server logs for progress.'});
@@ -152,7 +199,7 @@ app.post('/transcribe', cors(), async (req, res) => {
   console.log('🎤 Transcription request received...');
   try {
     const { runTranscribe } = await import('./jobs/transcribe.js');
-    await runTranscribe();
+    await runTranscribe(req.tenantId);
     res.json({status: 'ok', message: 'Transcription completed. Check server logs for details.'});
   } catch (err) {
     console.error('❌ Error during transcription:', err);
@@ -164,7 +211,7 @@ app.post('/transcribe', cors(), async (req, res) => {
 app.post('/process-old-dreams', cors(), async (req, res) => {
   console.log('🔄 Processing old dreams - creating connections and analyzing...');
   try {
-    await runJobs();
+    await runJobs(req.tenantId);
     res.json({status: 'ok', message: 'Old dreams processing completed. Check server logs for details.'});
   } catch (err) {
     console.error('❌ Error processing old dreams:', err);

@@ -23,11 +23,11 @@ class DataStore {
     this.counters = db.collection('counters');
   }
 
-  createItemId(){
+  createItemId(tenantId = 'default'){
     return this.counters.findOneAndUpdate(
-      {name: 'itemsCounter' },
-      { $inc: { value: 1 }}, 
-      { returnNewDocument: true, upsert : true}
+      { name: 'itemsCounter', tenantId },
+      { $setOnInsert: { createdAt: new Date() }, $inc: { value: 1 } },
+      { returnDocument: 'after', upsert: true }
     );
   }
 

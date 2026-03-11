@@ -1,12 +1,12 @@
 const axios = require('axios');
 
-const requestProcess = async () => {
+const requestProcess = async (tenantId = 'default') => {
   const maxRetries = 3;
   const retryDelay = 2000; // 2 seconds
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const response = await axios.post('http://localhost:9000/process', {}, {
+      const response = await axios.post(`http://localhost:9000/t/${tenantId}/process`, {}, {
         timeout: 5000 // 5 second timeout
       });
       console.log('✅ Successfully requested processing from play-with-dreams');

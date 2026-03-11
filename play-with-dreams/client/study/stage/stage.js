@@ -17,6 +17,9 @@ class Stage extends EventEmitter {
     this.items = [];
     this.hubs = [];
     this.constraints = [];
+    this.highlightLinks = [];
+    this.highlightedIds = new Set();
+    this.selectedId = null;
     this.createMatter();
     this.bind();
   }
@@ -251,6 +254,40 @@ class Stage extends EventEmitter {
     for(const item of this.items){
       item.afterUpdate?.();
     }
+  }
+
+  clearHighlightClasses(){
+    for (const item of this.items) {
+      item.el.classList.remove('is-related');
+      item.el.classList.remove('is-selected');
+    }
+  }
+
+  setHighlightLinks(links, selectedId){
+    this.clearHighlightClasses();
+    this.highlightLinks = links || [];
+    this.selectedId = selectedId || null;
+    this.highlightedIds = new Set();
+
+    for (const link of this.highlightLinks) {
+      this.highlightedIds.add(link.fromId);
+      this.highlightedIds.add(link.toId);
+    }
+
+    for (const item of this.items) {
+      if (this.selectedId && item.id === this.selectedId) {
+        item.el.classList.add('is-selected');
+      } else if (this.highlightedIds.has(item.id)) {
+        item.el.classList.add('is-related');
+      }
+    }
+  }
+
+  clearHighlightLinks(){
+    this.highlightLinks = [];
+    this.highlightedIds = new Set();
+    this.selectedId = null;
+    this.clearHighlightClasses();
   }
 
   addWalls(){
@@ -491,6 +528,23 @@ class Stage extends EventEmitter {
       ctx.moveTo(pos1.x, pos1.y);
       ctx.lineTo(pos2.x, pos2.y);
       ctx.stroke();
+    }
+
+    if (this.highlightLinks.length > 0) {
+      ctx.lineWidth = 2;
+      for (const link of this.highlightLinks) {
+        const fromItem = this.getStageItemById(link.fromId);
+        const toItem = this.getStageItemById(link.toId);
+        if (!fromItem || !toItem) continue;
+        const fromPos = this.stageToScreenCoords(fromItem.matter.position);
+        const toPos = this.stageToScreenCoords(toItem.matter.position);
+        ctx.strokeStyle = link.color || 'rgba(255,255,255,0.8)';
+        ctx.beginPath();
+        ctx.moveTo(fromPos.x, fromPos.y);
+        ctx.lineTo(toPos.x, toPos.y);
+        ctx.stroke();
+      }
+      ctx.lineWidth = 1;
     }
   }
 

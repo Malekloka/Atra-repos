@@ -5,8 +5,11 @@ const EMOJI = '🌐';
 
 const languages = ['en', 'he', 'ar'];
 
-async function runTranslateThemes(language){
-  const themes = await datastore.themes.collect({ [language]: {$exists: false} });
+async function runTranslateThemes(language, tenantId){
+  const themes = await datastore.themes.collect({
+    [language]: { $exists: false },
+    tenantId
+  });
   const translator = new Translator(language);
   let count = 0;
   for(const theme of themes){
@@ -19,8 +22,10 @@ async function runTranslateThemes(language){
   console.log(`${EMOJI} done translating ${count} themes to ${language}`);
 }
 
-async function runTranslateItems(language, fixAll){
-  const items = await datastore.items.collectPublished(fixAll ? {} : { [language]: {$exists: false} });
+async function runTranslateItems(language, fixAll, tenantId){
+  const items = await datastore.items.collectPublished(
+    fixAll ? { tenantId } : { [language]: { $exists: false }, tenantId }
+  );
   const translator = new Translator(language);
   let count = 0;
   for(const item of items){
@@ -57,10 +62,10 @@ async function runTranslateItems(language, fixAll){
 }
 
 
-export async function runTranslate(){
+export async function runTranslate(tenantId = 'default'){
   for(const language of languages){
-    await runTranslateThemes(language);
-    await runTranslateItems(language);
+    await runTranslateThemes(language, tenantId);
+    await runTranslateItems(language, false, tenantId);
   }
   console.log(`${EMOJI} done translating`);
 }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{lang}}">
+<html lang="{{lang}}" dir="{{dir}}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -38,18 +38,37 @@
   <div class="box">
     <h1>{{title}}</h1>
     <p>{{desc}}</p>
+    <div class="tenant-picker">
+      <label for="tenant-select" id="tenant-label" data-en="Choose location" data-he="בחר מיקום" data-ar="اختر موقعًا">Choose location</label>
+      <div class="tenant-picker__row">
+        <select id="tenant-select">
+          <option value="haifa" data-en="Haifa" data-he="חיפה" data-ar="حيفا">Haifa</option>
+          <option value="jerusalem" data-en="Jerusalem" data-he="ירושלים" data-ar="القدس">Jerusalem</option>
+          <option value="tel-aviv" data-en="Tel-Aviv" data-he="תל אביב" data-ar="تل أبيب">Tel-Aviv</option>
+          <option value="arad" data-en="Arad" data-he="ערד" data-ar="عراد">Arad</option>
+        </select>
+        <input
+          type="text"
+          id="tenant-custom"
+          placeholder="Or type a new location"
+          aria-label="Custom location"
+        />
+        <button type="button" id="tenant-continue" data-en="Change location" data-he="שנה מיקום" data-ar="تغيير الموقع">Change location</button>
+      </div>
+      <small><span id="tenant-current-label" data-en="Current location:" data-he="מיקום נוכחי:" data-ar="الموقع الحالي:">Current location:</span> <span id="tenant-current">{{tenant}}</span></small>
+    </div>
     <div class="links-row">
-      <a class="link" href="/{{lang}}/entry">
+      <a class="link" href="/t/{{tenant}}/{{lang}}/entry">
         {{add_dream}}
       </a>
-      <a class="link" href="http://localhost:9000/map?lang={{lang}}">
+      <a class="link" href="http://localhost:9000/t/{{tenant}}/map?lang={{lang}}">
         {{explore_dreams}}
       </a>
     </div>
     <div class="more-languages">
-      <a href="/he" class="for_he">{{for_he}}</a>
-      <a href="/en" class="for_en">{{for_en}}</a>
-      <a href="/ar" class="for_ar">{{for_ar}}</a>
+      <a href="/t/{{tenant}}/he" class="for_he">{{for_he}}</a>
+      <a href="/t/{{tenant}}/en" class="for_en">{{for_en}}</a>
+      <a href="/t/{{tenant}}/ar" class="for_ar">{{for_ar}}</a>
     </div>
   </div>
   <link rel="stylesheet" href="/assets/scripts/bg.css">
@@ -68,6 +87,96 @@
     });
     document.querySelector('.popup-close').addEventListener('click', () => {
       popup.close();
+    });
+    const tenantSelect = document.getElementById('tenant-select');
+    const tenantCustom = document.getElementById('tenant-custom');
+    const tenantCurrent = document.getElementById('tenant-current');
+    const tenantContinue = document.getElementById('tenant-continue');
+    const tenantLabel = document.getElementById('tenant-label');
+    const tenantCurrentLabel = document.getElementById('tenant-current-label');
+
+    const normalizeTenant = (value) => {
+      return value
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '');
+    };
+
+    const updateTenantOptionLabels = (lang) => {
+      const currentValue = tenantSelect.value;
+      const options = tenantSelect.querySelectorAll('option');
+      options.forEach((option) => {
+        const label = option.getAttribute(`data-${lang}`) || option.textContent;
+        option.textContent = label;
+      });
+      if (currentValue) {
+        tenantSelect.value = currentValue;
+      }
+      if (!tenantSelect.value) {
+        tenantSelect.selectedIndex = 0;
+      }
+      if (tenantLabel) {
+        tenantLabel.textContent = tenantLabel.getAttribute(`data-${lang}`) || tenantLabel.textContent;
+      }
+      if (tenantContinue) {
+        tenantContinue.textContent = tenantContinue.getAttribute(`data-${lang}`) || tenantContinue.textContent;
+      }
+      if (tenantCurrentLabel) {
+        tenantCurrentLabel.textContent = tenantCurrentLabel.getAttribute(`data-${lang}`) || tenantCurrentLabel.textContent;
+      }
+      if (tenantCustom) {
+        const placeholderMap = {
+          en: 'Or type a new location',
+          he: 'או כתבו מיקום חדש',
+          ar: 'أو اكتب موقعًا جديدًا'
+        };
+        tenantCustom.placeholder = placeholderMap[lang] || tenantCustom.placeholder;
+      }
+    };
+
+    const initLang = document.documentElement.getAttribute('lang') || 'he';
+    updateTenantOptionLabels(initLang);
+
+    if (tenantSelect && tenantCurrent) {
+      const currentValue = normalizeTenant(tenantCurrent.textContent || '');
+      if (currentValue) {
+        const hasOption = Array.from(tenantSelect.options).some(
+          (option) => option.value === currentValue
+        );
+        if (hasOption) {
+          tenantSelect.value = currentValue;
+        }
+      }
+    }
+
+    const goToTenant = () => {
+      const customValue = normalizeTenant(tenantCustom.value || '');
+      const selectValue = normalizeTenant(tenantSelect.value || '');
+      const tenant = customValue || selectValue;
+      if (!tenant) {
+        return;
+      }
+      const lang = document.documentElement.getAttribute('lang') || 'he';
+      window.location.href = `/t/${tenant}/${lang}/`;
+    };
+
+    tenantContinue.addEventListener('click', goToTenant);
+    tenantCustom.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        goToTenant();
+      }
+    });
+
+    const languageButtons = document.querySelectorAll('.dropdown__option');
+    languageButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const lang = button.getAttribute('data-value');
+        if (lang) {
+          updateTenantOptionLabels(lang);
+        }
+      });
     });
   </script>
 </body>

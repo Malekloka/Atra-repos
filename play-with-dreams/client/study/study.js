@@ -50,6 +50,11 @@ const translations = {
     en: 'Error exporting map',
     he: 'שגיאה בייצוא המפה',
     ar: 'خطأ في تصدير الخريطة'
+  },
+  relatedLegend: {
+    en: 'Related dreams',
+    he: 'חלומות קשורים',
+    ar: 'أحلام مرتبطة'
   }
 }
 
@@ -78,7 +83,8 @@ const languagesDropdown = new LanguagesDropdown(document.querySelector('#languag
 
 const mapsDropdown = new MapsDropdown(document.querySelector('#maps-dropdown'));
 
-const cityFilterDropdown = new CityFilterDropdown(document.querySelector('#city-filter-dropdown'));
+const cityFilterEl = document.querySelector('#city-filter-dropdown');
+const cityFilterDropdown = cityFilterEl ? new CityFilterDropdown(cityFilterEl) : null;
 
 const viewOptionsDropdown = new ViewOptionsDropdown(document.querySelector('#view-options-dropdown'));
 
@@ -109,6 +115,8 @@ const isGallery = !!queryParams.get('gallery');
 const isGalleryControl = !!queryParams.get('galleryControl');
 
 let _themes = [];
+let _themesById = new Map();
+let _connections = [];
 
 let _language = queryParams.get('lang') || 'he';
 // Set initial language attribute for CSS language switching
@@ -122,6 +130,179 @@ let adminPassword = 'admin'; // Default admin password for map editing
 
 let isStageLoaded = false;
 let isInitialLoad = true; // Track if this is the first load after page refresh
+
+const relatedLegendEl = document.getElementById('related-legend');
+const relatedLegendTitleEl = relatedLegendEl?.querySelector('.related-legend__title');
+const relatedLegendListEl = relatedLegendEl?.querySelector('.related-legend__list');
+
+const relatedPalette = [
+  '#FF3B30', // red
+  '#007AFF', // blue
+  '#FF9500', // orange
+  '#34C759', // green
+  '#AF52DE', // purple
+  '#FFD60A', // yellow
+  '#00C7BE', // teal
+  '#FF2D55', // pink
+  '#8E8E93', // gray
+  '#5AC8FA'  // light blue
+];
+
+const getIdString = (value) => (value?.toString ? value.toString() : value);
+
+const themeColorCache = new Map();
+const getThemeColor = (themeId) => {
+  if (themeColorCache.has(themeId)) {
+    return themeColorCache.get(themeId);
+  }
+  let hash = 0;
+  const str = String(themeId);
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  const color = relatedPalette[Math.abs(hash) % relatedPalette.length];
+  themeColorCache.set(themeId, color);
+  return color;
+};
+
+const getThemeLabel = (themeId) => {
+  const theme = _themesById.get(themeId);
+  if (!theme) return themeId;
+  return theme[_language] || theme.text || theme.en || theme.he || theme.ar || themeId;
+};
+
+const renderRelatedLegend = (legendItems) => {
+  if (!relatedLegendEl || !relatedLegendListEl || !relatedLegendTitleEl) return;
+  if (!legendItems || legendItems.length === 0) {
+    relatedLegendEl.classList.add('hidden');
+    return;
+  }
+  relatedLegendTitleEl.textContent = translations.relatedLegend[_language] || translations.relatedLegend.en;
+  relatedLegendListEl.innerHTML = legendItems.map(item => `
+    <li class="related-legend__item">
+      <span class="related-legend__swatch" style="background:${item.color}"></span>
+      <span class="related-legend__label">${item.label}</span>
+    </li>
+  `).join('');
+  relatedLegendEl.classList.remove('hidden');
+};
+
+const clearRelatedLegend = () => {
+  if (!relatedLegendEl) return;
+  relatedLegendEl.classList.add('hidden');
+  if (relatedLegendListEl) {
+    relatedLegendListEl.innerHTML = '';
+  }
+};
+
+const emotionKeys = translations.emotions.en;
+const emotionColorByKey = emotionKeys.reduce((acc, key, index) => {
+  acc[key] = kEmotionColors[index];
+  return acc;
+}, {});
+
+const buildRelatedLinks = (selectedItemId) => {
+  const selectedId = getIdString(selectedItemId);
+  const themeIds = [];
+  const relatedByTheme = new Map();
+
+  if (!_connections.length) {
+    return { links: [], legend: [] };
+  }
+
+  for (const conn of _connections) {
+    const itemId = getIdString(conn.itemId);
+    const themeId = getIdString(conn.themeId);
+    if (itemId === selectedId && !relatedByTheme.has(themeId)) {
+      themeIds.push(themeId);
+      relatedByTheme.set(themeId, []);
+    }
+  }
+
+  if (themeIds.length === 0) {
+    return { links: [], legend: [] };
+  }
+
+  for (const conn of _connections) {
+    const itemId = getIdString(conn.itemId);
+    const themeId = getIdString(conn.themeId);
+    if (!relatedByTheme.has(themeId) || itemId === selectedId) continue;
+    relatedByTheme.get(themeId).push(itemId);
+  }
+
+  const links = [];
+  const legend = [];
+  themeIds.forEach((themeId, index) => {
+    const color = relatedPalette[index % relatedPalette.length];
+    const label = getThemeLabel(themeId);
+    legend.push({ themeId, color, label });
+    const relatedItems = relatedByTheme.get(themeId) || [];
+    relatedItems.forEach((itemId) => {
+      links.push({
+        fromId: selectedId,
+        toId: itemId,
+        color,
+        themeId
+      });
+    });
+  });
+
+  return { links, legend };
+};
+
+const buildEmotionLinks = (selectedItem) => {
+  if (!selectedItem) return { links: [], legend: [] };
+  const selectedId = getIdString(selectedItem._id);
+  const activeEmotions = emotionKeys.filter((key) => !!selectedItem[key]);
+  if (!activeEmotions.length) return { links: [], legend: [] };
+
+  const links = [];
+  const legend = [];
+  activeEmotions.forEach((emotion, index) => {
+    const color = relatedPalette[index % relatedPalette.length];
+    const labelIndex = emotionKeys.indexOf(emotion);
+    const label = translations.emotions[_language]?.[labelIndex] || emotion;
+    legend.push({ themeId: emotion, color, label });
+
+    for (const stageItem of stage.items) {
+      if (stageItem instanceof StageHub) continue;
+      if (stageItem.id === selectedId) continue;
+      if (stageItem.item?.[emotion]) {
+        links.push({
+          fromId: selectedId,
+          toId: stageItem.id,
+          color,
+          themeId: emotion
+        });
+      }
+    }
+  });
+
+  return { links, legend };
+};
+
+const showRelatedLinks = (item) => {
+  const { links, legend } = buildRelatedLinks(item._id);
+  if (links.length > 0) {
+    stage.setHighlightLinks(links, getIdString(item._id));
+    renderRelatedLegend(legend);
+    return;
+  }
+
+  const fallback = buildEmotionLinks(item);
+  stage.setHighlightLinks(fallback.links, getIdString(item._id));
+  if (fallback.links.length > 0) {
+    renderRelatedLegend(fallback.legend);
+  } else {
+    clearRelatedLegend();
+  }
+};
+
+const clearRelatedLinks = () => {
+  stage.clearHighlightLinks();
+  clearRelatedLegend();
+};
 
 // Function to update hub modal with filtered themes
 function updateHubModalThemes() {
@@ -233,9 +414,11 @@ const changeLanguage = (new_language) => {
     cityFilterDropdown,
     chkColorGoodBadDream,
     chkShowEmotionsFelt
-  ].forEach(component => {
-    component.translate(_language);
-  });
+  ]
+    .filter(Boolean)
+    .forEach(component => {
+      component.translate(_language);
+    });
   
   // Update export button title
   const btnExportMap = document.querySelector('#btn-export-map');
@@ -269,6 +452,10 @@ const changeLanguage = (new_language) => {
     btnShowGood.title = goodLabel;
     btnShowBad.title = badLabel;
   }
+
+  if (_activeItem) {
+    showRelatedLinks(_activeItem);
+  }
 }
 
 let isSwitchingMaps = false;
@@ -279,6 +466,9 @@ async function clearMap(){
   isStageLoaded = false;
   isInitialLoad = true; // Reset initial load flag when switching maps
   _themes = [];
+  _themesById = new Map();
+  _connections = [];
+  clearRelatedLinks();
 }
 
 async function poll(){
@@ -329,11 +519,18 @@ async function poll(){
     // Always replace themes entirely (don't merge) to ensure we have ALL themes for the current map
     // The backend always sends all themes for the map, so we should always replace, not merge
     _themes = themes;
+    _themesById = new Map(
+      _themes.map(theme => {
+        const id = getIdString(theme._id);
+        return [id, theme];
+      })
+    );
     // Immediately update hub modal after replacing themes
     updateHubModalThemes();
   } else if (isInitialLoad) {
     // If no themes returned and it's initial load, clear themes array
     _themes = [];
+    _themesById = new Map();
     // Clear hub modal
     hubModal.setOptions([]);
   }
@@ -526,12 +723,15 @@ async function poll(){
     
     // Filter connections to only include those with meaningful values (value > 0.1)
     const filteredConnections = validConnections.filter(c => c.value > 0.1);
+    _connections = filteredConnections;
     
     stage.createConnections(filteredConnections);
     // Update statistics after connections are created (reduced delay)
     if(!isInitialLoad){
       setTimeout(updateStatistics, 100);
     }
+  } else {
+    _connections = [];
   }
   
   // Also update statistics after hubs are loaded (reduced delay)
@@ -551,19 +751,27 @@ function bind(){
   stage.on('hover', ({item}) => {
     if(isGallery) return;
     detailsBox.showItem(item, _language, false, datastore);
+    if (!_activeItem) {
+      showRelatedLinks(item);
+    }
   })
 
   stage.on('unhover', () => {
     detailsBox.hideIfNotFixed();
+    if (!_activeItem) {
+      clearRelatedLinks();
+    }
   })
 
   stage.on('open', ({item}) => {
     setActiveItem(item);
     detailsBox.showItem(item, _language, true, datastore);
+    showRelatedLinks(item);
   })
 
   detailsBox.on('close', () => {
     setActiveItem(null);
+    clearRelatedLinks();
   });
 
   stage.on('change', () => {
@@ -649,7 +857,8 @@ function bind(){
     isSwitchingMaps = false; // Re-enable saving after map switch is complete
   });
 
-  cityFilterDropdown.on('select', async (city) => {
+  if (cityFilterDropdown) {
+    cityFilterDropdown.on('select', async (city) => {
     // If "both" is selected, switch to dual cluster map based on current map type
     if (city === 'both') {
       // Determine which dual cluster map to use based on current map
@@ -715,7 +924,8 @@ function bind(){
       await new Promise(resolve => setTimeout(resolve, 100));
       await poll();
     }
-  });
+    });
+  }
 
   // view options
   // chkColorGoodBadDream

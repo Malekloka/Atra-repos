@@ -43,6 +43,102 @@ h1 {
   }
 }
 
+.tenant-picker {
+  margin: 1.5em 0 2em;
+  text-align: start;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(117, 163, 173, 0.35);
+  border-radius: 16px;
+  padding: 16px;
+  backdrop-filter: blur(8px);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.tenant-picker label {
+  display: block;
+  font-size: 0.9em;
+  margin-bottom: 0.6em;
+  color: #cfe3e6;
+}
+
+.tenant-picker__row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.6em;
+  align-items: stretch;
+  width: 100%;
+}
+
+.tenant-picker select,
+.tenant-picker input {
+  font: inherit;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(17, 17, 17, 0.8);
+  color: #dfdfdf;
+  min-width: 0;
+  min-height: 52px;
+  line-height: 1.7;
+  box-sizing: border-box;
+}
+
+.tenant-picker select {
+  width: 100%;
+}
+
+.tenant-picker select option {
+  line-height: 1.7;
+  padding: 6px 10px;
+}
+
+.tenant-picker input {
+  width: 100%;
+}
+
+.tenant-picker__row button {
+  width: 100%;
+  min-height: 44px;
+  line-height: 1.2;
+  box-sizing: border-box;
+}
+
+.tenant-picker input::placeholder {
+  color: rgba(223, 223, 223, 0.6);
+}
+
+.tenant-picker__row button {
+  padding: 10px 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(117, 163, 173, 0.6);
+  background: rgba(117, 163, 173, 0.2);
+  color: #e9f4f6;
+  font-weight: 600;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.tenant-picker__row button:hover {
+  background: rgba(117, 163, 173, 0.35);
+  transform: translateY(-1px);
+}
+
+.tenant-picker small {
+  display: block;
+  margin-top: 0.8em;
+  font-size: 0.85em;
+  color: rgba(223, 223, 223, 0.75);
+}
+
+@media (min-width: 900px) {
+  .tenant-picker__row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .tenant-picker__row button {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (max-width: 600px) {
   .box {
     padding: 1em 0 5vh;

@@ -3,7 +3,7 @@ import Transcriber from '../services/transcriber/transcriber.js';
 
 const EMOJI = '🎤';
 
-const getNextItem = async () => {
+const getNextItem = async (tenantId) => {
   return datastore.items.getPublished({ 
     $or: [
       {text: {$exists: false}},
@@ -11,13 +11,14 @@ const getNextItem = async () => {
       {text: null},
       {text: undefined}
     ],
-    audioUrl: {$exists: true}
+    audioUrl: {$exists: true},
+    tenantId
   });
 }
 
-export async function runTranscribe(){
+export async function runTranscribe(tenantId = 'default'){
   const transcriber = new Transcriber();
-  let item = await getNextItem();
+  let item = await getNextItem(tenantId);
 
   if (!item) {
     console.log(`${EMOJI} No items found that need transcription`);
@@ -62,7 +63,7 @@ export async function runTranscribe(){
       }
       // Continue with next item instead of stopping
     }
-    item = await getNextItem();
+    item = await getNextItem(tenantId);
   }
 
   console.log(`\n${EMOJI} Done transcribing ${count} item(s)`);

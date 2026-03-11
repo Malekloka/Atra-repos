@@ -13,7 +13,10 @@ router.post('/api/poll', async (req, res) => {
   const { lastPoll, mapName, city, originalMapName } = req.body;
   
   // Get the map first to check if it's a combined cities map or dual cluster map
-  const map = await datastore.maps.get({name: mapName || 'map'});
+  const map = await datastore.maps.get({
+    name: mapName || 'map',
+    tenantId: req.tenantId
+  });
   const isCombinedCitiesMap = map && map.cities && Array.isArray(map.cities) && map.cities.length > 0 && !map.isDualCluster;
   const isDualClusterMap = map && map.isDualCluster;
   
@@ -73,7 +76,9 @@ router.post('/api/poll', async (req, res) => {
   }
   // If no city filter (null, undefined, or empty string), show all dreams (no city filter applied)
   
-  const items = await datastore.items.collectPublished(query, { 
+  const items = await datastore.items.collectPublished(
+    { ...query, tenantId: req.tenantId },
+    { 
     _id: 1, 
     text: 1, 
     audioUrl: 1, 
@@ -176,14 +181,22 @@ router.post('/api/poll', async (req, res) => {
     }
 
     if (Object.keys(updates).length > 0) {
-      await datastore.items.update(item._id, updates, { silent: true });
+      await datastore.items.update(item._id, updates, {
+        silent: true,
+        tenantId: req.tenantId
+      });
     }
   }
   
   // Get all published maps, but exclude individual city-specific maps and dual cluster map
   // Dual cluster map is only accessible via city filter dropdown, not main maps dropdown
   // City filtering is now handled by the separate city filter dropdown OR by map selection
-  const allMaps = lastPoll ? null : await datastore.maps.collect({isPublished: true}, {name: 1, en: 1, he: 1, ar: 1, cities: 1, isDualCluster: 1});
+  const allMaps = lastPoll
+    ? null
+    : await datastore.maps.collect(
+        { isPublished: true, tenantId: req.tenantId },
+        { name: 1, en: 1, he: 1, ar: 1, cities: 1, isDualCluster: 1 }
+      );
   const maps = allMaps ? allMaps.filter(m => {
     // Exclude individual city maps and dual cluster map (only accessible via city filter)
     if (m.name === 'map_arad' || m.name === 'map_tel-aviv' || m.name === 'map_dual_clusters' || m.isDualCluster) return false;
@@ -201,12 +214,14 @@ router.post('/api/poll', async (req, res) => {
     // For Life Topics map: show ALL themes with mapName='map' (no mapName filter needed since we fixed DB)
     // We want ALL Life Topics themes, not just ones referenced by hubs
     themesQuery = {
-      mapName: 'map'
+      mapName: 'map',
+      tenantId: req.tenantId
     };
   } else {
     // For other maps (like Jungian): ONLY show themes with matching mapName
     themesQuery = {
-      mapName: themeMapName
+      mapName: themeMapName,
+      tenantId: req.tenantId
     };
   }
   
@@ -248,7 +263,7 @@ router.post('/api/poll', async (req, res) => {
     return typeof item._id === 'string' ? new ObjectId(item._id) : item._id;
   });
   
-  let connectionsQuery = { value: { $gt: 0.1 } };
+  let connectionsQuery = { value: { $gt: 0.1 }, tenantId: req.tenantId };
   
   // Always filter connections by itemIds (the items that were returned)
   if (itemIds.length > 0) {
@@ -268,13 +283,19 @@ router.post('/api/poll', async (req, res) => {
 // get connections
 router.post('/api/connections', async (req, res) => {
   const { themeId } = req.body;
-  const connections = await datastore.connections.collect({ themeId: new ObjectId(themeId) }, { themeId:1, itemId: 1, value: 1 });
+  const connections = await datastore.connections.collect(
+    { themeId: new ObjectId(themeId), tenantId: req.tenantId },
+    { themeId:1, itemId: 1, value: 1 }
+  );
   res.json(connections);
 });
 
 // get all themes
 router.post('/api/themes', async (req, res) => {
-  const themes = await datastore.themes.collect({}, { _id: 1, text: 1 });
+  const themes = await datastore.themes.collect(
+    { tenantId: req.tenantId },
+    { _id: 1, text: 1 }
+  );
   res.json(themes);
 });
 
@@ -296,7 +317,10 @@ router.post('/api/map', async (req, res) => {
     ...update,
     hubs: update.hubs || []
   };
-  await datastore.maps.upsert({name: mapName}, updateData);
+  await datastore.maps.upsert(
+    { name: mapName, tenantId: req.tenantId },
+    { ...updateData, tenantId: req.tenantId }
+  );
   res.json({status: 'ok'});
 });
 
@@ -308,7 +332,7 @@ router.post('/api/comments', async (req, res) => {
       return res.status(400).json({error: 'Item ID is required'});
     }
     const comments = await datastore.comments.collect(
-      { itemId: new ObjectId(itemId) },
+      { itemId: new ObjectId(itemId), tenantId: req.tenantId },
       { _id: 1, itemId: 1, text: 1, he: 1, en: 1, ar: 1, authorName: 1, createdAt: 1 }
     );
     // Sort by creation date, newest first
@@ -365,16 +389,17 @@ router.post('/api/add-comment', async (req, res) => {
       en: translations.en || originalText,
       he: translations.he || originalText,
       ar: translations.ar || originalText,
-      text: originalText // Keep original for backward compatibility
+      text: originalText, // Keep original for backward compatibility
+      tenantId: req.tenantId
     };
     
     const commentId = await datastore.comments.create(commentData);
     
-    const comment = await datastore.comments.get(commentId);
+    const comment = await datastore.comments.get(commentId, { tenantId: req.tenantId });
     
     // Emit socket event for real-time updates
     if(req.io){
-      req.io.emit('new-comment', { itemId, comment });
+      req.io.to(`tenant:${req.tenantId}`).emit('new-comment', { itemId, comment, tenantId: req.tenantId });
     }
     
     res.json({
@@ -390,7 +415,7 @@ router.post('/api/add-comment', async (req, res) => {
 // add new dream with automatic categorization
 router.post('/api/add-dream', async (req, res) => {
   try {
-    const { text, mapName, city } = req.body;
+    const { text, mapName } = req.body;
     
     if(!text || !text.trim()){
       return res.status(400).json({error: 'Dream text is required'});
@@ -403,8 +428,8 @@ router.post('/api/add-dream', async (req, res) => {
     // Normalize city field if provided (telaviv -> tel-aviv)
     // If empty string or null, leave city undefined so dream appears in main cluster
     let normalizedCity = undefined;
-    if(city && city.trim()){
-      const cityLower = city.toLowerCase().trim();
+    if (req.tenantId) {
+      const cityLower = req.tenantId.toLowerCase().trim();
       normalizedCity = cityLower === 'telaviv' ? 'tel-aviv' : cityLower;
     }
     
@@ -414,7 +439,8 @@ router.post('/api/add-dream', async (req, res) => {
       isDraft: false,
       fullyAnalyzed: false,
       good_bad_dream: goodBadDreamValue,
-      createdAt: new Date()
+      createdAt: new Date(),
+      tenantId: req.tenantId
     };
     
     // Add city field only if provided
@@ -424,21 +450,25 @@ router.post('/api/add-dream', async (req, res) => {
     
     const itemId = await datastore.items.create(itemData);
 
-    const item = await datastore.items.get(itemId);
+    const item = await datastore.items.get(itemId, { tenantId: req.tenantId });
 
     // Extract main theme from the dream
     const extractor = new Extractor();
     const mainTheme = await extractor.analyze(item.text);
     
     // Create/upsert the theme
-    await datastore.themes.upsert({text: mainTheme.trim()}, {
+    await datastore.themes.upsert({text: mainTheme.trim(), tenantId: req.tenantId}, {
       text: mainTheme.trim(),
       mapName: mapName || 'map',
-      sourceItem: itemId
+      sourceItem: itemId,
+      tenantId: req.tenantId
     });
 
     // Get all existing themes
-    const themes = await datastore.themes.collect({}, { _id: 1, text: 1 });
+    const themes = await datastore.themes.collect(
+      { tenantId: req.tenantId },
+      { _id: 1, text: 1 }
+    );
 
     // Create connections between the new item and all themes
     const connections = [];
@@ -446,7 +476,8 @@ router.post('/api/add-dream', async (req, res) => {
       if(theme._id && theme.text){
         connections.push({
           itemId: itemId,
-          themeId: theme._id
+          themeId: theme._id,
+          tenantId: req.tenantId
         });
       }
     }

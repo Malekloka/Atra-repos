@@ -17,20 +17,26 @@ const queries = {
   unextractedItemsQuery: {[flagExtractedMainTheme]: {$exists: true}},
 }
 
-async function run(){
-  const unextractedItems = await datastore.items.collectPublished(queries.unextractedItemsQuery, details);
+async function run(tenantId = 'default'){
+  const unextractedItems = await datastore.items.collectPublished(
+    { ...queries.unextractedItemsQuery, tenantId },
+    details
+  );
   for(const item of unextractedItems){
     const mainTheme = await extractor.analyze(item.text);
     console.log(item.text);
     console.log(mainTheme);
     item[flagExtractedMainTheme] = mainTheme;
     await datastore.items.saveItem(item);
-    await datastore.themes.upsert({sourceItem: item._id}, {text: mainTheme});
+    await datastore.themes.upsert(
+      { sourceItem: item._id, tenantId },
+      { text: mainTheme, tenantId }
+    );
   }
 }
 
-async function addTheme (text) {
-  await datastore.themes.upsert({text});
+async function addTheme (text, tenantId = 'default') {
+  await datastore.themes.upsert({ text, tenantId });
   console.log('added theme ' + text);
 }
 

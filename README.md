@@ -112,6 +112,56 @@ Or use the platform-specific scripts:
    - Hover over dreams to read them
    - Use keyboard shortcuts (Space for fullscreen, +/- for zoom, arrows for navigation)
 
+## Scaffolding
+
+Use scaffolding to generate new files with consistent templates.
+
+### Commands
+
+```bash
+npm run scaffold:job <name>
+npm run scaffold:route <name>
+npm run scaffold:service <name>
+npm run scaffold:ui <name>
+npm run scaffold:collection <name>
+npm run scaffold:atra-route <name>
+```
+
+### What each scaffold creates
+
+- `scaffold:job` → `play-with-dreams/jobs/<name>.js` and adds it to `jobs/index.js`
+- `scaffold:route` → `play-with-dreams/routes/<name>.routes.js` and registers in `server.js`
+- `scaffold:service` → `play-with-dreams/services/<name>.js`
+- `scaffold:ui` → `play-with-dreams/client/<name>.html|css|js` and adds a route in `server.js`
+- `scaffold:collection` → `play-with-dreams/services/database/<name>.collection.js` and adds it to `datastore.js`
+- `scaffold:atra-route` → `atra/frontend/pages/<name>/<name>.html|css|js` and registers a route in `atra/server.routing.js`
+
+### Overwrite existing files
+
+```bash
+node scripts/scaffold.js <type> <name> --force
+```
+
+## Multi-Tenant + Location Mode (Summary)
+
+- **Multi-tenant routing** via `/t/<tenant>/...` on both servers.
+- **Tenant isolation** added to MongoDB reads/writes (per-tenant items, themes, maps, comments, connections).
+- **Default tenant** is `demo` when no tenant is provided.
+- **Tenant = location** model enabled:
+  - City is auto-set from tenant on save.
+  - City filter dropdown hidden on the map.
+
+## Related Dreams Highlight (Summary)
+
+- Hover/click a dream to **highlight related dreams** by shared categories.
+- **Colored connections** and a **legend** show each category.
+- **Non-AI fallback** uses feelings (fear, happiness, etc.) as categories when AI is off.
+
+## Location Picker (Summary)
+
+- Homepage includes a **location picker** (with custom input).
+- Labels update for **Hebrew/English/Arabic**.
+
 ## Dream Map Visualization
 
 ![Dream Map Visualization](images/map.png)

@@ -16,29 +16,34 @@ class DataStoreCollection {
     // this.collection.createIndex( fuzzyTextIndexes)
   }
 
-  async create(index){
+  async create(index, tenantId = 'default'){
     const operation = await this.collection.insertOne({
       createdAt: new Date(),
       published: false,
       isDraft: true,
-      index: index
+      index: index,
+      tenantId
     });
 
 
     return operation.insertedId;
   }
 
-  remove(itemId){
-    return this.update(itemId, {deleted: true});
+  remove(itemId, options = {}){
+    return this.update(itemId, {deleted: true}, options);
   }
 
-  async get(itemIdOrQuery){
+  async get(itemIdOrQuery, options = {}){
     if(typeof itemIdOrQuery === 'string'){
       itemIdOrQuery = new ObjectId(itemIdOrQuery);
     }
 
     if(itemIdOrQuery instanceof ObjectId){
-      return this.collection.findOne({ _id: itemIdOrQuery });
+      const query = { _id: itemIdOrQuery };
+      if (options.tenantId) {
+        query.tenantId = options.tenantId;
+      }
+      return this.collection.findOne(query);
     }
 
     return this.collection.findOne(itemIdOrQuery);
@@ -50,7 +55,10 @@ class DataStoreCollection {
     }
 
     return this.collection.findOneAndUpdate(
-      { _id: new ObjectId(itemId) },
+      {
+        _id: new ObjectId(itemId),
+        ...(options.tenantId ? { tenantId: options.tenantId } : {})
+      },
       { $set: values }
     );
   }
@@ -63,8 +71,11 @@ class DataStoreCollection {
     return this.collection.find({}).sort({updatedAt: -1}).toArray();
   }
 
-  async textSearch(searchText, fields, filters){
+  async textSearch(searchText, fields, filters, tenantId){
     const query = {isDraft:false, deleted: {$exists: false}};
+    if (tenantId) {
+      query.tenantId = tenantId;
+    }
     const regex = new RegExp(searchText.trim(), 'i');
     fields = fields ?? fuzzySearchFields;
     if(searchText.length){

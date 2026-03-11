@@ -13,7 +13,7 @@
 </head>
 <body>
   <nav>
-    <a class="btn-back" href="/{{lang}}/">
+    <a class="btn-back" href="/t/{{tenant}}/{{lang}}/">
       <img src="/assets/img/back-arrow.svg" alt="back">
     </a>
     <div class="dropdown" id="languages-dropdown">
@@ -33,7 +33,7 @@
     <h1>{{title}}</h1>
     <p>{{description}}</p>
     <div class="links-row">
-      <form method="post" action="/{{lang}}/new">
+      <form method="post" action="/t/{{tenant}}/{{lang}}/new">
         <input type="hidden" name="type" value="record">
         <button type="submit" class="link">
           <img src="/assets/img/mic.svg" alt="">
@@ -41,7 +41,7 @@
         </button>
       </form>
 
-      <form method="post" action="/{{lang}}/new">
+      <form method="post" action="/t/{{tenant}}/{{lang}}/new">
         <input type="hidden" name="type" value="write">
         <button type="submit" class="link">
           <img src="/assets/img/pencil.svg" alt="">

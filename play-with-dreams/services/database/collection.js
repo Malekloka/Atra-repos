@@ -28,13 +28,17 @@ export default class DataStoreCollection {
     return this.get(query);
   }
 
-  async get(itemIdOrQuery){
+  async get(itemIdOrQuery, options = {}){
     if(typeof itemIdOrQuery === 'string'){
       itemIdOrQuery = new ObjectId(itemIdOrQuery);
     }
 
     if(itemIdOrQuery instanceof ObjectId){
-      return this.collection.findOne({ _id: itemIdOrQuery });
+      const query = { _id: itemIdOrQuery };
+      if (options.tenantId) {
+        query.tenantId = options.tenantId;
+      }
+      return this.collection.findOne(query);
     }
 
     return this.collection.findOne(itemIdOrQuery);
@@ -75,7 +79,10 @@ export default class DataStoreCollection {
     }
 
     return this.collection.findOneAndUpdate(
-      { _id: new ObjectId(itemId) },
+      {
+        _id: new ObjectId(itemId),
+        ...(options.tenantId ? { tenantId: options.tenantId } : {})
+      },
       { $set: values },
       { returnDocument: 'after' }
     );
@@ -105,6 +112,9 @@ export default class DataStoreCollection {
   }
 
   async saveItem(item){
-    return this.update(item._id, item, { silent: true });
+    return this.update(item._id, item, {
+      silent: true,
+      ...(item.tenantId ? { tenantId: item.tenantId } : {})
+    });
   }
 }
