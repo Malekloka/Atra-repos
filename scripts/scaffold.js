@@ -3,12 +3,15 @@ const path = require('path');
 
 const args = process.argv.slice(2);
 const force = args.includes('--force') || args.includes('-f');
-const filteredArgs = args.filter((arg) => arg !== '--force' && arg !== '-f');
+const includeJob = args.includes('--with-job');
+const filteredArgs = args.filter(
+  (arg) => !['--force', '-f', '--with-job'].includes(arg)
+);
 const [type, rawName] = filteredArgs;
 
 if (!type || !rawName) {
   console.error(
-    'Usage: node scripts/scaffold.js <job|route|service|ui|collection|atra-route> <name> [--force]'
+    'Usage: node scripts/scaffold.js <job|route|service|ui|collection|atra-route|all> <name> [--force] [--with-job]'
   );
   process.exit(1);
 }
@@ -167,12 +170,6 @@ const templates = {
   }
 };
 
-const config = templates[type];
-if (!config) {
-  console.error(`Unknown scaffold type: ${type}`);
-  process.exit(1);
-}
-
 const replaceTemplate = (content) => {
   return content
     .replace(/__NAME_KEBAB__/g, nameKebab)
@@ -181,27 +178,34 @@ const replaceTemplate = (content) => {
     .replace(/__NAME__/g, rawName);
 };
 
-config.targets.forEach(({ template, target }) => {
-  const templateContent = fs.readFileSync(template, 'utf8');
-  const outputContent = replaceTemplate(templateContent);
-
-  const existed = fs.existsSync(target);
-  if (existed && !force) {
-    console.error(`Target already exists: ${target}`);
+const runScaffold = (scaffoldType) => {
+  const config = templates[scaffoldType];
+  if (!config) {
+    console.error(`Unknown scaffold type: ${scaffoldType}`);
     process.exit(1);
   }
 
-  fs.mkdirSync(path.dirname(target), { recursive: true });
-  fs.writeFileSync(target, outputContent, 'utf8');
-  console.log(
-    `${existed && force ? 'Updated' : 'Created'} ${path.relative(
-      workspaceRoot,
-      target
-    )}`
-  );
-});
+  config.targets.forEach(({ template, target }) => {
+    const templateContent = fs.readFileSync(template, 'utf8');
+    const outputContent = replaceTemplate(templateContent);
 
-if (type === 'job') {
+    const existed = fs.existsSync(target);
+    if (existed && !force) {
+      console.error(`Target already exists: ${target}`);
+      process.exit(1);
+    }
+
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, outputContent, 'utf8');
+    console.log(
+      `${existed && force ? 'Updated' : 'Created'} ${path.relative(
+        workspaceRoot,
+        target
+      )}`
+    );
+  });
+
+  if (scaffoldType === 'job') {
   const jobsIndexPath = path.join(
     workspaceRoot,
     'play-with-dreams',
@@ -227,13 +231,13 @@ if (type === 'job') {
       `${runLine}\n  console.log('All jobs done 🎉');`
     );
   }
-  if (updated !== jobsIndex) {
-    fs.writeFileSync(jobsIndexPath, updated, 'utf8');
-    console.log('Updated play-with-dreams/jobs/index.js');
+    if (updated !== jobsIndex) {
+      fs.writeFileSync(jobsIndexPath, updated, 'utf8');
+      console.log('Updated play-with-dreams/jobs/index.js');
+    }
   }
-}
 
-if (type === 'route') {
+  if (scaffoldType === 'route') {
   const serverPath = path.join(workspaceRoot, 'play-with-dreams', 'server.js');
   const serverSource = fs.readFileSync(serverPath, 'utf8');
   const importLine = `import ${nameCamel}Router from './routes/${nameKebab}.routes.js';`;
@@ -256,13 +260,13 @@ if (type === 'route') {
     );
   }
 
-  if (updated !== serverSource) {
-    fs.writeFileSync(serverPath, updated, 'utf8');
-    console.log('Updated play-with-dreams/server.js');
+    if (updated !== serverSource) {
+      fs.writeFileSync(serverPath, updated, 'utf8');
+      console.log('Updated play-with-dreams/server.js');
+    }
   }
-}
 
-if (type === 'ui') {
+  if (scaffoldType === 'ui') {
   const serverPath = path.join(workspaceRoot, 'play-with-dreams', 'server.js');
   const serverSource = fs.readFileSync(serverPath, 'utf8');
   const newRoute = `app.get('/${nameKebab}', (req, res) => {\n  res.sendFile('client/${nameKebab}.html', { root: process.cwd() });\n});`;
@@ -274,14 +278,14 @@ if (type === 'ui') {
       (match) => `${match}\n${newRoute}\n`
     );
 
-    if (updated !== serverSource) {
-      fs.writeFileSync(serverPath, updated, 'utf8');
-      console.log('Updated play-with-dreams/server.js');
+      if (updated !== serverSource) {
+        fs.writeFileSync(serverPath, updated, 'utf8');
+        console.log('Updated play-with-dreams/server.js');
+      }
     }
   }
-}
 
-if (type === 'collection') {
+  if (scaffoldType === 'collection') {
   const datastorePath = path.join(
     workspaceRoot,
     'play-with-dreams',
@@ -301,15 +305,15 @@ if (type === 'collection') {
       }
     });
 
-    if (insertAfter !== -1) {
-      lines.splice(insertAfter + 1, 0, newLine);
-      fs.writeFileSync(datastorePath, lines.join('\n'), 'utf8');
-      console.log('Updated play-with-dreams/services/database/datastore.js');
+      if (insertAfter !== -1) {
+        lines.splice(insertAfter + 1, 0, newLine);
+        fs.writeFileSync(datastorePath, lines.join('\n'), 'utf8');
+        console.log('Updated play-with-dreams/services/database/datastore.js');
+      }
     }
   }
-}
 
-if (type === 'atra-route') {
+  if (scaffoldType === 'atra-route') {
   const routingPath = path.join(workspaceRoot, 'atra', 'server.routing.js');
   const routingSource = fs.readFileSync(routingPath, 'utf8');
   const routeBlock = `app.get('/:locale/${nameKebab}', async (req, res) => {\n  const strings = await locales.get(req.params.locale);\n  res.render('pages/${nameKebab}/${nameKebab}', {\n    ...strings.lang,\n    title: '${namePascal}',\n    description: 'TODO: describe ${nameKebab} page'\n  });\n})\n\n`;
@@ -320,9 +324,24 @@ if (type === 'atra-route') {
       `${routeBlock}app.get('/:locale/', async (req, res) => {`
     );
 
-    if (updated !== routingSource) {
-      fs.writeFileSync(routingPath, updated, 'utf8');
-      console.log('Updated atra/server.routing.js');
+      if (updated !== routingSource) {
+        fs.writeFileSync(routingPath, updated, 'utf8');
+        console.log('Updated atra/server.routing.js');
+      }
     }
   }
-}
+};
+
+const typesToRun =
+  type === 'all'
+    ? [
+        ...(includeJob ? ['job'] : []),
+        'route',
+        'service',
+        'ui',
+        'collection',
+        'atra-route'
+      ]
+    : [type];
+
+typesToRun.forEach((scaffoldType) => runScaffold(scaffoldType));

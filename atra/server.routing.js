@@ -8,6 +8,72 @@ const uploader = require('./services/storage/uploader');
 const axios = require('axios');
 const { randomStarName } = require('./services/names/names')
 const { requestProcess } = require('./request-process');
+const { OpenAI } = require('openai');
+
+const ADMIN_COOKIE = 'admin';
+const ADMIN_USER = process.env.ADMIN_USER;
+const ADMIN_PASS = process.env.ADMIN_PASS;
+const TENANT_COOKIE = 'tenantId';
+
+const isAdmin = (req) => {
+  const cookieHeader = req.headers.cookie || '';
+  return cookieHeader.includes(`${ADMIN_COOKIE}=1`);
+};
+
+const setAdminCookie = (res) => {
+  const cookieValue = `${ADMIN_COOKIE}=1; Path=/; HttpOnly`;
+  const existing = res.getHeader('Set-Cookie');
+  if (!existing) {
+    res.setHeader('Set-Cookie', cookieValue);
+    return;
+  }
+  if (Array.isArray(existing)) {
+    res.setHeader('Set-Cookie', [...existing, cookieValue]);
+    return;
+  }
+  res.setHeader('Set-Cookie', [existing, cookieValue]);
+};
+
+const setTenantCookie = (res, tenantId) => {
+  const cookieValue = `${TENANT_COOKIE}=${encodeURIComponent(tenantId)}; Path=/`;
+  const existing = res.getHeader('Set-Cookie');
+  if (!existing) {
+    res.setHeader('Set-Cookie', cookieValue);
+    return;
+  }
+  if (Array.isArray(existing)) {
+    res.setHeader('Set-Cookie', [...existing, cookieValue]);
+    return;
+  }
+  res.setHeader('Set-Cookie', [existing, cookieValue]);
+};
+
+const normalizeLocationKey = (value) => {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
+};
+
+const translateLocation = async (name, targetLanguage) => {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    return name;
+  }
+  try {
+    const client = new OpenAI({ apiKey });
+    const prompt = `Translate the location name into ${targetLanguage}. Return only the translated text.\n\nLocation: ${name}`;
+    const response = await client.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.2
+    });
+    return response.choices?.[0]?.message?.content?.trim() || name;
+  } catch {
+    return name;
+  }
+};
 
 const datastore = new DataStore({
   connectionString: config.database.connectionString//process.env.MONGODB_URI
@@ -40,13 +106,132 @@ app.post('/upload_file', uploader.audioUpload, async (req, res) => {
   res.json({url, job: req.file?.job});
 })
 
+app.get('/api/locations', async (req, res) => {
+  const locations = await datastore.locations
+    .find({})
+    .sort({ en: 1 })
+    .toArray();
+  res.json({ locations });
+});
+
+app.post('/api/tenant', async (req, res) => {
+  const tenantId = (req.body?.tenant || '').trim();
+  if (!tenantId) {
+    return res.status(400).json({ error: 'Tenant is required' });
+  }
+  setTenantCookie(res, tenantId);
+  res.json({ ok: true });
+});
+
+app.get('/admin', async (req, res) => {
+  res.render('admin/admin', {
+    isAdmin: isAdmin(req) ? 'true' : ''
+  });
+});
+
+app.post('/admin/login', async (req, res) => {
+  if (!ADMIN_USER || !ADMIN_PASS) {
+    return res.status(500).json({ ok: false, error: 'Admin credentials not configured' });
+  }
+  const { username, password } = req.body;
+  if (username === ADMIN_USER && password === ADMIN_PASS) {
+    setAdminCookie(res);
+    return res.json({ ok: true });
+  }
+  return res.status(401).json({ ok: false, error: 'Invalid credentials' });
+});
+
+app.post('/admin/locations', async (req, res) => {
+  if (!isAdmin(req)) {
+    return res.status(403).json({ error: 'Unauthorized' });
+  }
+  const name = (req.body?.name || '').trim();
+  const nameHe = (req.body?.he || '').trim();
+  const nameAr = (req.body?.ar || '').trim();
+  if (!name) {
+    return res.status(400).json({ error: 'Location name is required' });
+  }
+  const key = normalizeLocationKey(name);
+  if (!key) {
+    return res.status(400).json({ error: 'Invalid location name' });
+  }
+  const existing = await datastore.locations.findOne({ key });
+  if (existing) {
+    return res.status(409).json({ error: 'Location already exists' });
+  }
+  const [he, ar] = await Promise.all([
+    nameHe || translateLocation(name, 'Hebrew'),
+    nameAr || translateLocation(name, 'Arabic')
+  ]);
+  await datastore.locations.insertOne({
+    key,
+    en: name,
+    he: he || name,
+    ar: ar || name,
+    createdAt: new Date()
+  });
+  res.json({ ok: true });
+});
+
+app.patch('/admin/locations/:key', async (req, res) => {
+  if (!isAdmin(req)) {
+    return res.status(403).json({ error: 'Unauthorized' });
+  }
+  const key = normalizeLocationKey(req.params.key || '');
+  if (!key) {
+    return res.status(400).json({ error: 'Invalid location key' });
+  }
+  const en = (req.body?.en || '').trim();
+  const he = (req.body?.he || '').trim();
+  const ar = (req.body?.ar || '').trim();
+  if (!en) {
+    return res.status(400).json({ error: 'English name is required' });
+  }
+  const existing = await datastore.locations.findOne({ key });
+  if (!existing) {
+    return res.status(404).json({ error: 'Location not found' });
+  }
+  await datastore.locations.updateOne(
+    { key },
+    { $set: { en, he: he || en, ar: ar || en, updatedAt: new Date() } }
+  );
+  res.json({ ok: true });
+});
+
+app.delete('/admin/locations/:key', async (req, res) => {
+  if (!isAdmin(req)) {
+    return res.status(403).json({ error: 'Unauthorized' });
+  }
+  const key = normalizeLocationKey(req.params.key || '');
+  if (!key) {
+    return res.status(400).json({ error: 'Invalid location key' });
+  }
+  const existing = await datastore.locations.findOne({ key });
+  if (!existing) {
+    return res.status(404).json({ error: 'Location not found' });
+  }
+
+  const db = datastore.db;
+  await Promise.all([
+    db.collection('items').deleteMany({ tenantId: key }),
+    db.collection('themes').deleteMany({ tenantId: key }),
+    db.collection('maps').deleteMany({ tenantId: key }),
+    db.collection('connections').deleteMany({ tenantId: key }),
+    db.collection('comments').deleteMany({ tenantId: key }),
+    db.collection('counters').deleteMany({ tenantId: key })
+  ]);
+
+  await datastore.locations.deleteOne({ key });
+  res.json({ ok: true });
+});
+
 app.post('/check_file', async (req, res) => {
   console.log('checking file')
   const completed = await uploader.checkJob(req.body.job)
   res.json({completed})
 })
 
-app.get('/:locale/success', async (req, res) => {
+app.get('/:locale(he|en|ar)/success', async (req, res) => {
   const strings = await locales.get(req.params.locale);
   const name = req.query.name;
   res.render('input/success/success', {
@@ -58,7 +243,7 @@ app.get('/:locale/success', async (req, res) => {
 })
 
 // views
-app.get('/:locale/entry', async (req, res) => {
+app.get('/:locale(he|en|ar)/entry', async (req, res) => {
   const strings = await locales.get(req.params.locale);
 
   res.render('input/entry/entry', {
@@ -68,11 +253,11 @@ app.get('/:locale/entry', async (req, res) => {
   })
 })
 
-app.post('/:locale/new', async (req, res) => {
+app.post('/:locale(he|en|ar)/new', async (req, res) => {
   const index = await datastore.createItemId(req.tenantId);
   const id = await datastore.items.create(index.value, req.tenantId);
   const { type } = req.body;
-  res.redirect(`/t/${req.tenantId}/${req.params.locale}/${id}/${type}/`);
+  res.redirect(`/${req.params.locale}/${id}/${type}/`);
 });
   
 
@@ -80,45 +265,45 @@ const preventReEdit = async (req, res, next) => {
   const item = await datastore.items.get(req.params.id, { tenantId: req.tenantId });
   req.item = item;
   if (!item) {
-    return res.redirect(`/t/${req.tenantId}/${req.params.locale}/entry`);
+    return res.redirect(`/${req.params.locale}/entry`);
   }
   if(item.isDraft === true){
     next();
   } else {
-    res.redirect(`/t/${req.tenantId}/${req.params.locale}/success`);
+    res.redirect(`/${req.params.locale}/success`);
   }
 }
 
-app.get('/:locale/:id/record', preventReEdit, async (req, res) => {
+app.get('/:locale(he|en|ar)/:id/record', preventReEdit, async (req, res) => {
   const strings = await locales.get(req.params.locale);
   res.render('input/recorder/recorder', {
     ...strings,
     ...strings.lang,
     ...strings.recorder,
-    form_link: `/t/${req.tenantId}/${req.params.locale}/${req.params.id}/fill/`,
+    form_link: `/${req.params.locale}/${req.params.id}/fill/`,
     id: req.params.id,
     tenant: req.tenantId
   })
 })
 
-app.post('/:locale/:id/record/update', preventReEdit, async (req, res) => {
+app.post('/:locale(he|en|ar)/:id/record/update', preventReEdit, async (req, res) => {
   const v = await datastore.items.update(req.params.id, req.body, { tenantId: req.tenantId });
   res.json({ok: true, updated: v.updated}) 
 })
 
-app.get('/:locale/:id/write', preventReEdit, async (req, res) => {
+app.get('/:locale(he|en|ar)/:id/write', preventReEdit, async (req, res) => {
   const strings = await locales.get(req.params.locale);
   res.render('input/writer/writer', {
     ...strings,
     ...strings.lang,
     ...strings.writer,
-    form_link: `/t/${req.tenantId}/${req.params.locale}/${req.params.id}/fill/`,
+    form_link: `/${req.params.locale}/${req.params.id}/fill/`,
     id: req.params.id,
     tenant: req.tenantId
   })
 });
 
-app.post('/:locale/:id/write/update', async (req, res) => {
+app.post('/:locale(he|en|ar)/:id/write/update', async (req, res) => {
   const values = {
     text: req.body.text,
     display_language: req.params.locale
@@ -128,7 +313,7 @@ app.post('/:locale/:id/write/update', async (req, res) => {
   res.json({ok: true, updated: v.updated})
 })
 
-app.get('/:locale/:id/fill', preventReEdit, async (req, res) => {
+app.get('/:locale(he|en|ar)/:id/fill', preventReEdit, async (req, res) => {
   const strings = await locales.get(req.params.locale);
   res.render('input/form/form', {
     ...strings.form,
@@ -139,17 +324,17 @@ app.get('/:locale/:id/fill', preventReEdit, async (req, res) => {
   })
 });
 
-app.post('/:locale/:id/write/load', async (req, res) => {
+app.post('/:locale(he|en|ar)/:id/write/load', async (req, res) => {
   const item = await datastore.items.get(req.params.id, { tenantId: req.tenantId });
   res.json(item);
 })
 
-app.post('/:locale/:id/fill/load', async (req, res) => {
+app.post('/:locale(he|en|ar)/:id/fill/load', async (req, res) => {
   const item = await datastore.items.get(req.params.id, { tenantId: req.tenantId });
   res.json(item);
 })
 
-app.post('/:locale/:id/fill/save', async (req, res) => {
+app.post('/:locale(he|en|ar)/:id/fill/save', async (req, res) => {
   const isPublishing = req.body.isDraft === false;
   const data = req.body;
   if (req.tenantId) {
@@ -195,7 +380,7 @@ app.post('/:locale/:id/fill/save', async (req, res) => {
   res.json({success: true, updated: op.updated, name});
 })
 
-app.get('/:locale/', async (req, res) => {
+app.get('/:locale(he|en|ar)/', async (req, res) => {
   const strings = await locales.get(req.params.locale);
   res.render('index/index', {
     ...strings.index,
@@ -205,7 +390,7 @@ app.get('/:locale/', async (req, res) => {
 })
 
 app.get('/', async (req, res) => {
-  res.redirect(`/t/${req.tenantId}/he/`);
+  res.redirect(`/he/`);
 })
 
 

@@ -21,6 +21,7 @@ class DataStore {
 
     this.items = new DataStoreCollection(db, 'items');
     this.counters = db.collection('counters');
+    this.locations = db.collection('locations');
   }
 
   createItemId(tenantId = 'default'){

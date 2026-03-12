@@ -112,6 +112,32 @@ Or use the platform-specific scripts:
    - Hover over dreams to read them
    - Use keyboard shortcuts (Space for fullscreen, +/- for zoom, arrows for navigation)
 
+## One-Click Deployment (Render - Free)
+
+This repo includes a `render.yaml` Blueprint for one-click deployment.
+
+Deploy button:
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=YOUR_GITHUB_REPO_URL)
+
+### Steps
+
+1. Push this repo to GitHub
+2. Create a free MongoDB Atlas cluster and get the connection string
+3. In Render, choose **New > Blueprint** and select your repo
+4. Set env vars for both services:
+   - `MONGODB_URI` (Atlas connection string)
+   - `DB_NAME` (same DB name for both)
+   - `OPENAI_API_KEY` (optional)
+5. Set env vars for the `atra` service only:
+   - `ADMIN_USER`
+   - `ADMIN_PASS`
+   - `PLAY_WITH_DREAMS_URL` = the Render URL of the `play-with-dreams` service (e.g. `https://play-with-dreams.onrender.com`)
+
+Notes:
+- Free services sleep after inactivity; the first request may be slow.
+- MongoDB is not hosted on Render for free, so use Atlas.
+
 ## Scaffolding
 
 Use scaffolding to generate new files with consistent templates.
@@ -125,6 +151,7 @@ npm run scaffold:service <name>
 npm run scaffold:ui <name>
 npm run scaffold:collection <name>
 npm run scaffold:atra-route <name>
+npm run scaffold:all <name>
 ```
 
 ### What each scaffold creates
@@ -135,6 +162,15 @@ npm run scaffold:atra-route <name>
 - `scaffold:ui` → `play-with-dreams/client/<name>.html|css|js` and adds a route in `server.js`
 - `scaffold:collection` → `play-with-dreams/services/database/<name>.collection.js` and adds it to `datastore.js`
 - `scaffold:atra-route` → `atra/frontend/pages/<name>/<name>.html|css|js` and registers a route in `atra/server.routing.js`
+- `scaffold:all` → creates **route + service + ui + collection + atra-route** together
+
+### Jobs are private by default
+
+Jobs are internal background tasks, so `scaffold:all` does **not** create a job unless you ask for it.
+
+```bash
+npm run scaffold:all <name> -- --with-job
+```
 
 ### Overwrite existing files
 

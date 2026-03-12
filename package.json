@@ -11,7 +11,8 @@
     "scaffold:service": "node scripts/scaffold.js service",
     "scaffold:ui": "node scripts/scaffold.js ui",
     "scaffold:collection": "node scripts/scaffold.js collection",
-    "scaffold:atra-route": "node scripts/scaffold.js atra-route"
+    "scaffold:atra-route": "node scripts/scaffold.js atra-route",
+    "scaffold:all": "node scripts/scaffold.js all"
   },
   "author": "",
   "license": "ISC"

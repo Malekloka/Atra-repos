@@ -41,34 +41,29 @@
     <div class="tenant-picker">
       <label for="tenant-select" id="tenant-label" data-en="Choose location" data-he="בחר מיקום" data-ar="اختر موقعًا">Choose location</label>
       <div class="tenant-picker__row">
-        <select id="tenant-select">
-          <option value="haifa" data-en="Haifa" data-he="חיפה" data-ar="حيفا">Haifa</option>
-          <option value="jerusalem" data-en="Jerusalem" data-he="ירושלים" data-ar="القدس">Jerusalem</option>
-          <option value="tel-aviv" data-en="Tel-Aviv" data-he="תל אביב" data-ar="تل أبيب">Tel-Aviv</option>
-          <option value="arad" data-en="Arad" data-he="ערד" data-ar="عراد">Arad</option>
-        </select>
         <input
           type="text"
-          id="tenant-custom"
-          placeholder="Or type a new location"
-          aria-label="Custom location"
+          id="tenant-search"
+          placeholder="Search locations..."
+          aria-label="Search locations"
         />
-        <button type="button" id="tenant-continue" data-en="Change location" data-he="שנה מיקום" data-ar="تغيير الموقع">Change location</button>
+        <div class="tenant-grid" id="tenant-grid">
+          <div class="tenant-grid__empty" id="tenant-grid-empty">Loading...</div>
+        </div>
       </div>
-      <small><span id="tenant-current-label" data-en="Current location:" data-he="מיקום נוכחי:" data-ar="الموقع الحالي:">Current location:</span> <span id="tenant-current">{{tenant}}</span></small>
     </div>
     <div class="links-row">
-      <a class="link" href="/t/{{tenant}}/{{lang}}/entry">
+      <a class="link" id="link-add-dream" href="/{{lang}}/entry">
         {{add_dream}}
       </a>
-      <a class="link" href="http://localhost:9000/t/{{tenant}}/map?lang={{lang}}">
+      <a class="link" id="link-map" href="http://localhost:9000/t/{{tenant}}/map?lang={{lang}}">
         {{explore_dreams}}
       </a>
     </div>
     <div class="more-languages">
-      <a href="/t/{{tenant}}/he" class="for_he">{{for_he}}</a>
-      <a href="/t/{{tenant}}/en" class="for_en">{{for_en}}</a>
-      <a href="/t/{{tenant}}/ar" class="for_ar">{{for_ar}}</a>
+      <a href="/he" class="for_he">{{for_he}}</a>
+      <a href="/en" class="for_en">{{for_en}}</a>
+      <a href="/ar" class="for_ar">{{for_ar}}</a>
     </div>
   </div>
   <link rel="stylesheet" href="/assets/scripts/bg.css">
@@ -88,12 +83,10 @@
     document.querySelector('.popup-close').addEventListener('click', () => {
       popup.close();
     });
-    const tenantSelect = document.getElementById('tenant-select');
-    const tenantCustom = document.getElementById('tenant-custom');
-    const tenantCurrent = document.getElementById('tenant-current');
-    const tenantContinue = document.getElementById('tenant-continue');
+    const tenantGrid = document.getElementById('tenant-grid');
+    const tenantGridEmpty = document.getElementById('tenant-grid-empty');
+    const tenantSearch = document.getElementById('tenant-search');
     const tenantLabel = document.getElementById('tenant-label');
-    const tenantCurrentLabel = document.getElementById('tenant-current-label');
 
     const normalizeTenant = (value) => {
       return value
@@ -104,70 +97,43 @@
     };
 
     const updateTenantOptionLabels = (lang) => {
-      const currentValue = tenantSelect.value;
-      const options = tenantSelect.querySelectorAll('option');
-      options.forEach((option) => {
-        const label = option.getAttribute(`data-${lang}`) || option.textContent;
-        option.textContent = label;
+      const items = tenantGrid.querySelectorAll('.tenant-grid__item');
+      items.forEach((item) => {
+        const label = item.getAttribute(`data-${lang}`) || item.textContent;
+        item.textContent = label;
       });
-      if (currentValue) {
-        tenantSelect.value = currentValue;
-      }
-      if (!tenantSelect.value) {
-        tenantSelect.selectedIndex = 0;
-      }
       if (tenantLabel) {
         tenantLabel.textContent = tenantLabel.getAttribute(`data-${lang}`) || tenantLabel.textContent;
       }
-      if (tenantContinue) {
-        tenantContinue.textContent = tenantContinue.getAttribute(`data-${lang}`) || tenantContinue.textContent;
-      }
-      if (tenantCurrentLabel) {
-        tenantCurrentLabel.textContent = tenantCurrentLabel.getAttribute(`data-${lang}`) || tenantCurrentLabel.textContent;
-      }
-      if (tenantCustom) {
+      if (tenantSearch) {
         const placeholderMap = {
-          en: 'Or type a new location',
-          he: 'או כתבו מיקום חדש',
-          ar: 'أو اكتب موقعًا جديدًا'
+          en: 'Search locations...',
+          he: 'חפש מיקום...',
+          ar: 'ابحث عن موقع...'
         };
-        tenantCustom.placeholder = placeholderMap[lang] || tenantCustom.placeholder;
+        tenantSearch.placeholder = placeholderMap[lang] || tenantSearch.placeholder;
       }
     };
 
     const initLang = document.documentElement.getAttribute('lang') || 'he';
     updateTenantOptionLabels(initLang);
 
-    if (tenantSelect && tenantCurrent) {
-      const currentValue = normalizeTenant(tenantCurrent.textContent || '');
-      if (currentValue) {
-        const hasOption = Array.from(tenantSelect.options).some(
-          (option) => option.value === currentValue
-        );
-        if (hasOption) {
-          tenantSelect.value = currentValue;
-        }
-      }
-    }
-
-    const goToTenant = () => {
-      const customValue = normalizeTenant(tenantCustom.value || '');
-      const selectValue = normalizeTenant(tenantSelect.value || '');
-      const tenant = customValue || selectValue;
+    const setTenant = async (tenant) => {
       if (!tenant) {
         return;
       }
-      const lang = document.documentElement.getAttribute('lang') || 'he';
-      window.location.href = `/t/${tenant}/${lang}/`;
+      try {
+        await fetch('/api/tenant', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tenant })
+        });
+      } catch {
+        // Ignore failures
+      }
     };
 
-    tenantContinue.addEventListener('click', goToTenant);
-    tenantCustom.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        goToTenant();
-      }
-    });
+    let selectedTenant = '';
 
     const languageButtons = document.querySelectorAll('.dropdown__option');
     languageButtons.forEach((button) => {
@@ -178,6 +144,102 @@
         }
       });
     });
+
+    let allLocations = [];
+
+    const populateLocations = (locations, lang) => {
+      tenantGrid.innerHTML = '';
+      if (!locations.length) {
+        tenantGridEmpty.textContent = lang === 'he' ? 'אין מיקומים זמינים' : lang === 'ar' ? 'لا توجد مواقع' : 'No locations available';
+        tenantGrid.appendChild(tenantGridEmpty);
+        return;
+      }
+      locations.forEach((location) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'tenant-grid__item';
+        button.dataset.key = location.key;
+        button.dataset.en = location.en || location.key;
+        button.dataset.he = location.he || location.en || location.key;
+        button.dataset.ar = location.ar || location.en || location.key;
+        button.textContent = location[lang] || location.en || location.key;
+        if (location.key === selectedTenant) {
+          button.classList.add('is-selected');
+        }
+        button.addEventListener('click', () => {
+          selectedTenant = location.key;
+          setTenant(selectedTenant);
+          tenantGrid.querySelectorAll('.tenant-grid__item').forEach((el) => {
+            el.classList.toggle('is-selected', el.dataset.key === selectedTenant);
+          });
+        });
+        tenantGrid.appendChild(button);
+      });
+      updateTenantOptionLabels(lang);
+    };
+
+    const loadLocations = async () => {
+      const lang = document.documentElement.getAttribute('lang') || 'he';
+      try {
+        const response = await fetch('/api/locations');
+        const data = await response.json();
+        allLocations = data.locations || [];
+        populateLocations(allLocations, lang);
+      } catch (error) {
+        populateLocations([], lang);
+      }
+    };
+
+    loadLocations();
+
+    const filterLocations = () => {
+      const lang = document.documentElement.getAttribute('lang') || 'he';
+      const query = (tenantSearch?.value || '').trim().toLowerCase();
+      if (!query) {
+        populateLocations(allLocations, lang);
+        return;
+      }
+      const filtered = allLocations.filter((location) => {
+        return (
+          (location.key || '').toLowerCase().includes(query) ||
+          (location.en || '').toLowerCase().includes(query) ||
+          (location.he || '').toLowerCase().includes(query) ||
+          (location.ar || '').toLowerCase().includes(query)
+        );
+      });
+      populateLocations(filtered, lang);
+    };
+
+    if (tenantSearch) {
+      tenantSearch.addEventListener('input', filterLocations);
+    }
+
+    const linkAddDream = document.getElementById('link-add-dream');
+    const linkMap = document.getElementById('link-map');
+
+    const handleNavigate = async (event) => {
+      event.preventDefault();
+      const link = event.currentTarget;
+      const lang = document.documentElement.getAttribute('lang') || 'he';
+      const tenant = selectedTenant;
+      if (!tenant) {
+        alert(lang === 'he' ? 'בחר מיקום לפני שממשיכים' : lang === 'ar' ? 'اختر موقعًا قبل المتابعة' : 'Choose a location before continuing');
+        return;
+      }
+      await setTenant(tenant);
+      if (link === linkMap) {
+        window.location.href = `http://localhost:9000/t/${tenant}/map?lang=${lang}`;
+      } else {
+        window.location.href = `/${lang}/entry`;
+      }
+    };
+
+    if (linkAddDream) {
+      linkAddDream.addEventListener('click', handleNavigate);
+    }
+    if (linkMap) {
+      linkMap.addEventListener('click', handleNavigate);
+    }
   </script>
 </body>
 </html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin</title>
+  <link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+  <div class="admin-card">
+    <h1>Admin</h1>
+    <div id="admin-login" class="admin-section">
+      <h2>Login</h2>
+      <form id="admin-login-form">
+        <label>
+          Username
+          <input type="text" id="admin-username" required />
+        </label>
+        <label>
+          Password
+          <input type="password" id="admin-password" required />
+        </label>
+        <button type="submit">Sign in</button>
+        <div id="admin-login-error" class="error"></div>
+      </form>
+    </div>
+    <div id="admin-panel" class="admin-section hidden">
+      <h2>Locations</h2>
+      <form id="location-form">
+        <label>
+          Location name (English)
+          <input type="text" id="location-name" placeholder="e.g. Haifa" required />
+        </label>
+        <label>
+          Location name (Hebrew)
+          <input type="text" id="location-name-he" placeholder="לדוגמה: חיפה" />
+        </label>
+        <label>
+          Location name (Arabic)
+          <input type="text" id="location-name-ar" placeholder="مثال: حيفا" />
+        </label>
+        <button type="submit">Add location</button>
+        <div id="location-error" class="error"></div>
+      </form>
+      <div class="locations-list">
+        <h3>Existing locations</h3>
+        <input type="text" id="locations-search" placeholder="Search locations..." />
+        <ul id="locations-list"></ul>
+      </div>
+    </div>
+  </div>
+  <script>
+    window.__IS_ADMIN__ = '{{isAdmin}}' ? true : false;
+  </script>
+  <script src="/admin/admin.js"></script>
+</body>
+</html>

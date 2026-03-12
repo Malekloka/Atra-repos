@@ -1,14 +1,20 @@
 const axios = require('axios');
 
 const requestProcess = async (tenantId = 'default') => {
+  const baseUrl = (process.env.PLAY_WITH_DREAMS_URL || 'http://localhost:9000').replace(
+    /\/$/,
+    ''
+  );
   const maxRetries = 3;
   const retryDelay = 2000; // 2 seconds
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const response = await axios.post(`http://localhost:9000/t/${tenantId}/process`, {}, {
-        timeout: 5000 // 5 second timeout
-      });
+      const response = await axios.post(
+        `${baseUrl}/t/${tenantId}/process`,
+        {},
+        { timeout: 5000 } // 5 second timeout
+      );
       console.log('✅ Successfully requested processing from play-with-dreams');
       return; // Success, exit function
     } catch (err) {
