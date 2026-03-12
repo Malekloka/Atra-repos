@@ -58,6 +58,31 @@ button:disabled {
   cursor: wait;
 }
 
+button.is-loading {
+  position: relative;
+  padding-right: 36px;
+}
+
+button.is-loading::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  margin-top: -7px;
+  border-radius: 50%;
+  border: 2px solid rgba(233, 244, 246, 0.4);
+  border-top-color: #e9f4f6;
+  animation: admin-spinner 0.8s linear infinite;
+}
+
+@keyframes admin-spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .error {
   color: #ff8f8f;
   font-size: 13px;

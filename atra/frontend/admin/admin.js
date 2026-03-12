@@ -10,6 +10,23 @@ const locationsSearch = document.getElementById('locations-search');
 
 let cachedLocations = [];
 
+const setButtonLoading = (button, isLoading, label) => {
+  if (!button) return;
+  if (isLoading) {
+    button.disabled = true;
+    button.classList.add('is-loading');
+    if (label) {
+      button.textContent = label;
+    }
+    return;
+  }
+  button.disabled = false;
+  button.classList.remove('is-loading');
+  if (label) {
+    button.textContent = label;
+  }
+};
+
 const parseJsonResponse = async (response) => {
   const text = await response.text();
   if (!text) {
@@ -72,6 +89,7 @@ const renderLocations = (locations) => {
 
   locationsList.querySelectorAll('.btn-save').forEach((button) => {
     button.addEventListener('click', async () => {
+      setButtonLoading(button, true, 'Saving...');
       const key = button.getAttribute('data-key');
       const row = button.closest('.location-item');
       const errorEl = row.querySelector('.location-error');
@@ -96,6 +114,8 @@ const renderLocations = (locations) => {
         loadLocations();
       } catch (error) {
         errorEl.textContent = error.message;
+      } finally {
+        setButtonLoading(button, false, 'Save');
       }
     });
   });
@@ -106,6 +126,7 @@ const renderLocations = (locations) => {
       if (!confirm(`Delete location "${key}" and all related data?`)) {
         return;
       }
+      setButtonLoading(button, true, 'Deleting...');
       try {
         const response = await fetch(`/admin/locations/${encodeURIComponent(key)}`, {
           method: 'DELETE'
@@ -117,6 +138,8 @@ const renderLocations = (locations) => {
         loadLocations();
       } catch (error) {
         alert(error.message);
+      } finally {
+        setButtonLoading(button, false, 'Delete');
       }
     });
   });
@@ -175,8 +198,7 @@ locationForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   locationError.textContent = '';
   if (locationSubmit) {
-    locationSubmit.disabled = true;
-    locationSubmit.textContent = 'Adding...';
+    setButtonLoading(locationSubmit, true, 'Adding...');
   }
   const name = document.getElementById('location-name').value.trim();
   const nameHe = document.getElementById('location-name-he').value.trim();
@@ -184,8 +206,7 @@ locationForm.addEventListener('submit', async (event) => {
   if (!name) {
     locationError.textContent = 'Location name is required.';
     if (locationSubmit) {
-      locationSubmit.disabled = false;
-      locationSubmit.textContent = 'Add location';
+      setButtonLoading(locationSubmit, false, 'Add location');
     }
     return;
   }
@@ -207,8 +228,7 @@ locationForm.addEventListener('submit', async (event) => {
     locationError.textContent = error.message;
   } finally {
     if (locationSubmit) {
-      locationSubmit.disabled = false;
-      locationSubmit.textContent = 'Add location';
+      setButtonLoading(locationSubmit, false, 'Add location');
     }
   }
 });
