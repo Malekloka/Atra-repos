@@ -4,6 +4,7 @@ const loginForm = document.getElementById('admin-login-form');
 const loginError = document.getElementById('admin-login-error');
 const locationForm = document.getElementById('location-form');
 const locationError = document.getElementById('location-error');
+const locationSubmit = document.getElementById('location-submit');
 const locationsList = document.getElementById('locations-list');
 const locationsSearch = document.getElementById('locations-search');
 
@@ -173,11 +174,19 @@ loginForm.addEventListener('submit', async (event) => {
 locationForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   locationError.textContent = '';
+  if (locationSubmit) {
+    locationSubmit.disabled = true;
+    locationSubmit.textContent = 'Adding...';
+  }
   const name = document.getElementById('location-name').value.trim();
   const nameHe = document.getElementById('location-name-he').value.trim();
   const nameAr = document.getElementById('location-name-ar').value.trim();
   if (!name) {
     locationError.textContent = 'Location name is required.';
+    if (locationSubmit) {
+      locationSubmit.disabled = false;
+      locationSubmit.textContent = 'Add location';
+    }
     return;
   }
   try {
@@ -196,5 +205,10 @@ locationForm.addEventListener('submit', async (event) => {
     loadLocations();
   } catch (error) {
     locationError.textContent = error.message;
+  } finally {
+    if (locationSubmit) {
+      locationSubmit.disabled = false;
+      locationSubmit.textContent = 'Add location';
+    }
   }
 });
