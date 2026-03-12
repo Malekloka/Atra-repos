@@ -145,84 +145,99 @@ app.post('/admin/locations', async (req, res) => {
   if (!isAdmin(req)) {
     return res.status(403).json({ error: 'Unauthorized' });
   }
-  const name = (req.body?.name || '').trim();
-  const nameHe = (req.body?.he || '').trim();
-  const nameAr = (req.body?.ar || '').trim();
-  if (!name) {
-    return res.status(400).json({ error: 'Location name is required' });
+  try {
+    const name = (req.body?.name || '').trim();
+    const nameHe = (req.body?.he || '').trim();
+    const nameAr = (req.body?.ar || '').trim();
+    if (!name) {
+      return res.status(400).json({ error: 'Location name is required' });
+    }
+    const key = normalizeLocationKey(name);
+    if (!key) {
+      return res.status(400).json({ error: 'Invalid location name' });
+    }
+    const existing = await datastore.locations.findOne({ key });
+    if (existing) {
+      return res.status(409).json({ error: 'Location already exists' });
+    }
+    const [he, ar] = await Promise.all([
+      nameHe || translateLocation(name, 'Hebrew'),
+      nameAr || translateLocation(name, 'Arabic')
+    ]);
+    await datastore.locations.insertOne({
+      key,
+      en: name,
+      he: he || name,
+      ar: ar || name,
+      createdAt: new Date()
+    });
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Admin create location failed', error);
+    res.status(500).json({ error: 'Server error' });
   }
-  const key = normalizeLocationKey(name);
-  if (!key) {
-    return res.status(400).json({ error: 'Invalid location name' });
-  }
-  const existing = await datastore.locations.findOne({ key });
-  if (existing) {
-    return res.status(409).json({ error: 'Location already exists' });
-  }
-  const [he, ar] = await Promise.all([
-    nameHe || translateLocation(name, 'Hebrew'),
-    nameAr || translateLocation(name, 'Arabic')
-  ]);
-  await datastore.locations.insertOne({
-    key,
-    en: name,
-    he: he || name,
-    ar: ar || name,
-    createdAt: new Date()
-  });
-  res.json({ ok: true });
 });
 
 app.patch('/admin/locations/:key', async (req, res) => {
   if (!isAdmin(req)) {
     return res.status(403).json({ error: 'Unauthorized' });
   }
-  const key = normalizeLocationKey(req.params.key || '');
-  if (!key) {
-    return res.status(400).json({ error: 'Invalid location key' });
+  try {
+    const key = normalizeLocationKey(req.params.key || '');
+    if (!key) {
+      return res.status(400).json({ error: 'Invalid location key' });
+    }
+    const en = (req.body?.en || '').trim();
+    const he = (req.body?.he || '').trim();
+    const ar = (req.body?.ar || '').trim();
+    if (!en) {
+      return res.status(400).json({ error: 'English name is required' });
+    }
+    const existing = await datastore.locations.findOne({ key });
+    if (!existing) {
+      return res.status(404).json({ error: 'Location not found' });
+    }
+    await datastore.locations.updateOne(
+      { key },
+      { $set: { en, he: he || en, ar: ar || en, updatedAt: new Date() } }
+    );
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Admin update location failed', error);
+    res.status(500).json({ error: 'Server error' });
   }
-  const en = (req.body?.en || '').trim();
-  const he = (req.body?.he || '').trim();
-  const ar = (req.body?.ar || '').trim();
-  if (!en) {
-    return res.status(400).json({ error: 'English name is required' });
-  }
-  const existing = await datastore.locations.findOne({ key });
-  if (!existing) {
-    return res.status(404).json({ error: 'Location not found' });
-  }
-  await datastore.locations.updateOne(
-    { key },
-    { $set: { en, he: he || en, ar: ar || en, updatedAt: new Date() } }
-  );
-  res.json({ ok: true });
 });
 
 app.delete('/admin/locations/:key', async (req, res) => {
   if (!isAdmin(req)) {
     return res.status(403).json({ error: 'Unauthorized' });
   }
-  const key = normalizeLocationKey(req.params.key || '');
-  if (!key) {
-    return res.status(400).json({ error: 'Invalid location key' });
-  }
-  const existing = await datastore.locations.findOne({ key });
-  if (!existing) {
-    return res.status(404).json({ error: 'Location not found' });
-  }
+  try {
+    const key = normalizeLocationKey(req.params.key || '');
+    if (!key) {
+      return res.status(400).json({ error: 'Invalid location key' });
+    }
+    const existing = await datastore.locations.findOne({ key });
+    if (!existing) {
+      return res.status(404).json({ error: 'Location not found' });
+    }
 
-  const db = datastore.db;
-  await Promise.all([
-    db.collection('items').deleteMany({ tenantId: key }),
-    db.collection('themes').deleteMany({ tenantId: key }),
-    db.collection('maps').deleteMany({ tenantId: key }),
-    db.collection('connections').deleteMany({ tenantId: key }),
-    db.collection('comments').deleteMany({ tenantId: key }),
-    db.collection('counters').deleteMany({ tenantId: key })
-  ]);
+    const db = datastore.db;
+    await Promise.all([
+      db.collection('items').deleteMany({ tenantId: key }),
+      db.collection('themes').deleteMany({ tenantId: key }),
+      db.collection('maps').deleteMany({ tenantId: key }),
+      db.collection('connections').deleteMany({ tenantId: key }),
+      db.collection('comments').deleteMany({ tenantId: key }),
+      db.collection('counters').deleteMany({ tenantId: key })
+    ]);
 
-  await datastore.locations.deleteOne({ key });
-  res.json({ ok: true });
+    await datastore.locations.deleteOne({ key });
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Admin delete location failed', error);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 app.post('/check_file', async (req, res) => {

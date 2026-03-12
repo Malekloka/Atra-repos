@@ -9,6 +9,18 @@ const locationsSearch = document.getElementById('locations-search');
 
 let cachedLocations = [];
 
+const parseJsonResponse = async (response) => {
+  const text = await response.text();
+  if (!text) {
+    return { data: null, raw: '' };
+  }
+  try {
+    return { data: JSON.parse(text), raw: text };
+  } catch {
+    return { data: null, raw: text };
+  }
+};
+
 const setAdminView = (isAdmin) => {
   if (isAdmin) {
     loginSection.classList.add('hidden');
@@ -76,9 +88,9 @@ const renderLocations = (locations) => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ en, he, ar })
         });
-        const data = await response.json();
+        const { data, raw } = await parseJsonResponse(response);
         if (!response.ok) {
-          throw new Error(data.error || 'Failed to update location');
+          throw new Error(data?.error || raw || 'Failed to update location');
         }
         loadLocations();
       } catch (error) {
@@ -97,9 +109,9 @@ const renderLocations = (locations) => {
         const response = await fetch(`/admin/locations/${encodeURIComponent(key)}`, {
           method: 'DELETE'
         });
-        const data = await response.json();
+        const { data, raw } = await parseJsonResponse(response);
         if (!response.ok) {
-          throw new Error(data.error || 'Failed to delete location');
+          throw new Error(data?.error || raw || 'Failed to delete location');
         }
         loadLocations();
       } catch (error) {
@@ -111,8 +123,8 @@ const renderLocations = (locations) => {
 
 const loadLocations = async () => {
   const response = await fetch('/api/locations');
-  const data = await response.json();
-  cachedLocations = data.locations || [];
+  const { data } = await parseJsonResponse(response);
+  cachedLocations = data?.locations || [];
   renderLocations(cachedLocations);
 };
 
@@ -174,9 +186,9 @@ locationForm.addEventListener('submit', async (event) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, he: nameHe, ar: nameAr })
     });
-    const data = await response.json();
+    const { data, raw } = await parseJsonResponse(response);
     if (!response.ok) {
-      throw new Error(data.error || 'Failed to add location');
+      throw new Error(data?.error || raw || 'Failed to add location');
     }
     document.getElementById('location-name').value = '';
     document.getElementById('location-name-he').value = '';
