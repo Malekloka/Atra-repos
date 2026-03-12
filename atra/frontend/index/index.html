@@ -56,7 +56,7 @@
       <a class="link" id="link-add-dream" href="/{{lang}}/entry">
         {{add_dream}}
       </a>
-      <a class="link" id="link-map" href="http://localhost:9000/t/{{tenant}}/map?lang={{lang}}">
+      <a class="link" id="link-map" href="{{map_base}}/t/{{tenant}}/map?lang={{lang}}">
         {{explore_dreams}}
       </a>
     </div>
@@ -228,7 +228,7 @@
       }
       await setTenant(tenant);
       if (link === linkMap) {
-        window.location.href = `http://localhost:9000/t/${tenant}/map?lang=${lang}`;
+        window.location.href = `{{map_base}}/t/${tenant}/map?lang=${lang}`;
       } else {
         window.location.href = `/${lang}/entry`;
       }

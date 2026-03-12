@@ -397,10 +397,15 @@ app.post('/:locale(he|en|ar)/:id/fill/save', async (req, res) => {
 
 app.get('/:locale(he|en|ar)/', async (req, res) => {
   const strings = await locales.get(req.params.locale);
+  const mapBase = (process.env.PLAY_WITH_DREAMS_URL || 'http://localhost:9000').replace(
+    /\/$/,
+    ''
+  );
   res.render('index/index', {
     ...strings.index,
     ...strings.lang,
-    tenant: req.tenantId
+    tenant: req.tenantId,
+    map_base: mapBase
   })
 })
 
