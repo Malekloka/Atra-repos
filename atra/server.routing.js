@@ -249,11 +249,16 @@ app.post('/check_file', async (req, res) => {
 app.get('/:locale(he|en|ar)/success', async (req, res) => {
   const strings = await locales.get(req.params.locale);
   const name = req.query.name;
+  const mapBase = (process.env.PLAY_WITH_DREAMS_URL || 'http://localhost:9000').replace(
+    /\/$/,
+    ''
+  );
   res.render('input/success/success', {
     ...strings.lang,
     ...strings.success,
     name: name,
-    tenant: req.tenantId
+    tenant: req.tenantId,
+    map_base: mapBase
   });
 })
 
