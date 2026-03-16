@@ -962,8 +962,24 @@ function bind(){
   // back button to home
   const btnBackHome = document.querySelector('#btn-back-home');
   if(btnBackHome) {
-    btnBackHome.addEventListener('click', () => {
-      window.location.href = `http://localhost:8000/${_language}/`;
+    let atraBaseUrl = null;
+    const getAtraBaseUrl = async () => {
+      if (atraBaseUrl) {
+        return atraBaseUrl;
+      }
+      try {
+        const response = await fetch('/api/config');
+        const data = await response.json();
+        const base = (data?.atraBase || '').replace(/\/$/, '');
+        atraBaseUrl = base || 'http://localhost:8000';
+      } catch {
+        atraBaseUrl = 'http://localhost:8000';
+      }
+      return atraBaseUrl;
+    };
+    btnBackHome.addEventListener('click', async () => {
+      const base = await getAtraBaseUrl();
+      window.location.href = `${base}/${_language}/`;
     });
   }
 

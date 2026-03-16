@@ -98,6 +98,12 @@ app.get('/map', (req, res) => {
   res.sendFile('client/study/study.html', { root: process.cwd() });
 });
 
+app.get('/api/config', (req, res) => {
+  res.json({
+    atraBase: process.env.ATRA_BASE_URL || 'http://localhost:8000'
+  });
+});
+
 app.get('/add-dream', (req, res) => {
   res.sendFile('client/add-dream.html', { root: process.cwd() });
 });

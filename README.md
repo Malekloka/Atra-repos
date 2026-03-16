@@ -133,6 +133,8 @@ Deploy button:
    - `ADMIN_USER`
    - `ADMIN_PASS`
    - `PLAY_WITH_DREAMS_URL` = the Render URL of the `play-with-dreams` service (e.g. `https://play-with-dreams.onrender.com`)
+6. Set env vars for the `play-with-dreams` service only:
+   - `ATRA_BASE_URL` = the Render URL of the `atra` service (e.g. `https://atra.onrender.com`)
 
 Notes:
 - Free services sleep after inactivity; the first request may be slow.
